@@ -46,8 +46,12 @@ export default defineConfig({
     1439: {
       name: 'Injective Testnet',
       blockExplorers: {
+        etherscan: {
+          url: 'https://testnet.blockscout.injective.network',
+          apiUrl: 'https://testnet.blockscout-api.injective.network/api',
+        },
         blockscout: {
-          url: 'https://testnet.blockscout.injective.network/',
+          url: 'https://testnet.blockscout.injective.network',
           apiUrl: 'https://testnet.blockscout-api.injective.network/api',
         },
       },
