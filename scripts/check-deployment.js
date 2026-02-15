@@ -49,7 +49,7 @@ async function main() {
       cwd: join(__dirname, ".."),
       env: { ...process.env, __DEPLOY_REEXEC: "1" },
     });
-    return;
+    process.exit(0);
   }
   const network = hre.network?.name || chosen;
   function loadDeployments() {

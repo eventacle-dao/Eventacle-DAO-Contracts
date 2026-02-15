@@ -78,7 +78,7 @@ async function main() {
       cwd: join(__dirname, ".."),
       env: { ...process.env, DEPLOY_NETWORK: chosen, __DEPLOY_REEXEC: "1" },
     });
-    return;
+    process.exit(0);
   }
   const network = hre.network?.name || chosen;
   const publicClient = await viem.getPublicClient();

@@ -22,13 +22,13 @@
  *   comments-list 列出某活动评论。ACTIVITY_ID
  *
  * 示例：
- *   ACTIVITY_CMD=create ACTIVITY_NAME="Hackathon 2026" ACTIVITY_SYMBOL="H26" ACTIVITY_METADATA_URI="ipfs://..." bunx hardhat run scripts/call-contracts.js --network inj_testnet
- *   ACTIVITY_CMD=list bunx hardhat run scripts/call-contracts.js --network inj_testnet
- *   ACTIVITY_CMD=info ACTIVITY_ID=activity-1 bunx hardhat run scripts/call-contracts.js --network inj_testnet
- *   ACTIVITY_CMD=mint ACTIVITY_ID=activity-1 ACTIVITY_TO=0x... bunx hardhat run scripts/call-contracts.js --network inj_testnet
- *   ACTIVITY_CMD=comment ACTIVITY_ID=activity-1 ACTIVITY_CONTENT_URI=ipfs://Qm... bunx hardhat run scripts/call-contracts.js --network inj_testnet
- *   ACTIVITY_CMD=reply ACTIVITY_ID=activity-1 ACTIVITY_REPLY_TO_INDEX=0 ACTIVITY_CONTENT_URI=ipfs://Qm... bunx hardhat run scripts/call-contracts.js --network inj_testnet
- *   ACTIVITY_CMD=comments-list ACTIVITY_ID=activity-1 bunx hardhat run scripts/call-contracts.js --network inj_testnet
+ *   ACTIVITY_CMD=create ACTIVITY_NAME="Hackathon 2026" ACTIVITY_SYMBOL="H26" ACTIVITY_METADATA_URI="ipfs://..." bunx hardhat run scripts/call-contracts.js 
+ *   ACTIVITY_CMD=list bunx hardhat run scripts/call-contracts.js
+ *   ACTIVITY_CMD=info ACTIVITY_ID=activity-1 bunx hardhat run scripts/call-contracts.js
+ *   ACTIVITY_CMD=mint ACTIVITY_ID=activity-1 ACTIVITY_TO=0x... bunx hardhat run scripts/call-contracts.js
+ *   ACTIVITY_CMD=comment ACTIVITY_ID=activity-1 ACTIVITY_CONTENT_URI=ipfs://Qm... bunx hardhat run scripts/call-contracts.js
+ *   ACTIVITY_CMD=reply ACTIVITY_ID=activity-1 ACTIVITY_REPLY_TO_INDEX=0 ACTIVITY_CONTENT_URI=ipfs://Qm... bunx hardhat run scripts/call-contracts.js
+ *   ACTIVITY_CMD=comments-list ACTIVITY_ID=activity-1 bunx hardhat run scripts/call-contracts.js
  */
 
 import { readFileSync, existsSync } from "node:fs";
@@ -63,7 +63,7 @@ if (!isChild && hre.network?.name !== chosen) {
     cwd: join(__dirname, ".."),
     env: { ...process.env, __DEPLOY_REEXEC: "1" },
   });
-  return;
+  process.exit(0);
 }
 
 const network = hre.network?.name || chosen;
