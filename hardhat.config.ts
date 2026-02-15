@@ -63,8 +63,8 @@ export default defineConfig({
       name: 'Injective Mainnet',
       blockExplorers: {
         etherscan: {
-          url: 'https://explorer.injective.network',
-          apiUrl: 'https://explorer.injective.network/api',
+          url: 'https://blockscout.injective.network',
+          apiUrl: 'https://blockscout-api.injective.network/api',
         },
         blockscout: {
           url: 'https://blockscout.injective.network',
@@ -76,10 +76,6 @@ export default defineConfig({
 
   // 合约验证配置（Hardhat v3 下位于 verify 命名空间）
   verify: {
-    etherscan: {
-      apiKey: 'nil', // 自定义网络可填占位符；主网/常用链需填真实 API Key
-      enabled: true,
-    },
     sourcify: {
       enabled: false, // 设置为 true 以启用 Sourcify 验证
     },
