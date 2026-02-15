@@ -10,6 +10,7 @@ import { createInterface } from "node:readline";
 import { writeFileSync, mkdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { existsSync, readFileSync, appendFileSync } from "node:fs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -36,8 +37,20 @@ function saveDeployments(network, data) {
   const deploymentsDir = join(__dirname, "..", "deployments");
   mkdirSync(deploymentsDir, { recursive: true });
   const path = join(deploymentsDir, `${network}.json`);
+  const backupPath = join(deploymentsDir, `${network}.json.bak`);
+  try {
+    if (existsSync(path)) {
+      const oldContent = readFileSync(path, "utf8");
+      appendFileSync(backupPath, "\n" + oldContent, "utf8");
+    }
+  } catch (e) {
+    console.error("备份失败:", e);
+  }
   writeFileSync(path, JSON.stringify(data, null, 2), "utf8");
   console.log("已写入:", path);
+  if (typeof existsSync === "function" && existsSync(backupPath)) {
+    console.log("已追加备份到:", backupPath);
+  }
 }
 
 async function main() {
