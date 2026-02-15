@@ -17,7 +17,7 @@
  *   addMinter    添加铸造者。ACTIVITY_ID, ACTIVITY_MINTER
  *   removeMinter 移除铸造者。ACTIVITY_ID, ACTIVITY_MINTER
  *   comment      发评论（需持 POAP）。ACTIVITY_ID, ACTIVITY_CONTENT_URI
- *   reply        发回复（需持 POAP）。ACTIVITY_ID, ACTIVITY_REPLY_TO_INDEX, ACTIVITY_CONTENT_URI [, ACTIVITY_REVIEW_URI] [, ACTIVITY_VISIBLE=1]
+ *   reply        发回复（需持 POAP）。ACTIVITY_ID, ACTIVITY_REPLY_TO_INDEX, ACTIVITY_CONTENT_URI [, ACTIVITY_REVIEW_URI]
  *   comments-list 列出某活动评论。ACTIVITY_ID
  *
  * 示例：
@@ -338,17 +338,17 @@ async function main() {
         return;
       }
       if (!activityId || replyToIndexStr === undefined || replyToIndexStr === "" || !contentURI) {
-        console.log("reply 需设置 ACTIVITY_ID, ACTIVITY_REPLY_TO_INDEX, ACTIVITY_CONTENT_URI；可选 ACTIVITY_REVIEW_URI, ACTIVITY_VISIBLE=1|0");
+        console.log("reply 需设置 ACTIVITY_ID, ACTIVITY_REPLY_TO_INDEX, ACTIVITY_CONTENT_URI；可选 ACTIVITY_REVIEW_URI");
         return;
       }
       const replyToIndex = BigInt(replyToIndexStr);
       const comments = await viem.getContractAt("ActivityComments", COMMENTS_ADDRESS);
-      const replyOpts = await getWriteTxOpts(publicClient, account, comments, "postReply", [activityId, replyToIndex, contentURI, reviewURI, isVisible]);
+      const replyOpts = await getWriteTxOpts(publicClient, account, comments, "postReply", [activityId, replyToIndex, contentURI, reviewURI]);
       if (!(await askConfirm("即将在 " + activityId + " 下回复 #" + replyToIndexStr + " " + contentURI, replyOpts))) {
         console.log("已取消");
         return;
       }
-      const replyTxHash = await comments.write.postReply([activityId, replyToIndex, contentURI, reviewURI, isVisible], replyOpts);
+      const replyTxHash = await comments.write.postReply([activityId, replyToIndex, contentURI, reviewURI], replyOpts);
       await waitTxThenConfirm(publicClient, replyTxHash, "回复");
       let replyCount;
       for (let i = 0; i < TX_CONFIRM_RETRIES; i++) {

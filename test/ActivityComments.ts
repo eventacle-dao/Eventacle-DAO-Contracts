@@ -156,7 +156,7 @@ describe("ActivityComments", async function () {
     const commentsAsBob = await viem.getContractAt("ActivityComments", comments.address, {
       client: { wallet: bob },
     });
-    await commentsAsBob.write.postReply(["activity-1", 0n, "ipfs://reply", "ipfs://review", true]);
+    await commentsAsBob.write.postReply(["activity-1", 0n, "ipfs://reply", "ipfs://review"]);
     assert.equal(await comments.read.getCommentCount(["activity-1"]), 2n);
     const [, , , , , replyTo0] = await comments.read.getComment(["activity-1", 0n]);
     const [, , , , , replyTo1] = await comments.read.getComment(["activity-1", 1n]);

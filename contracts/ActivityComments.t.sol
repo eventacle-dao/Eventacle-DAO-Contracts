@@ -92,7 +92,7 @@ contract ActivityCommentsTest is Test {
         vm.prank(user1);
         comments.postComment(ACTIVITY_ID, "ipfs://root");
         vm.prank(user2);
-        comments.postReply(ACTIVITY_ID, 0, "ipfs://reply1", "ipfs://review1", true);
+        comments.postReply(ACTIVITY_ID, 0, "ipfs://reply1", "ipfs://review1");
         assertEq(comments.getCommentCount(ACTIVITY_ID), 2);
         (, , , , , uint256 replyTo0) = comments.getComment(ACTIVITY_ID, 0);
         (, , , , , uint256 replyTo1) = comments.getComment(ACTIVITY_ID, 1);
@@ -108,7 +108,7 @@ contract ActivityCommentsTest is Test {
         comments.postComment(ACTIVITY_ID, "ipfs://root");
         vm.prank(user2);
         vm.expectRevert(abi.encodeWithSelector(ActivityComments.InvalidReplyToIndex.selector, 5, 1));
-        comments.postReply(ACTIVITY_ID, 5, "ipfs://x", "", true);
+        comments.postReply(ACTIVITY_ID, 5, "ipfs://x", "");
     }
 
     event CommentPosted(
