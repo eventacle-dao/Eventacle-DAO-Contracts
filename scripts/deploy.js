@@ -1,9 +1,11 @@
 /**
  * 部署 ActivityFactory，并可选部署 ActivityComments。
- * 部署结果写入 deployments/<network>.json，便于 check-deployment 与 call-contracts 使用。
+ * 部署结果写入 deployments/<network>.json。
  *
- * 用法：bunx hardhat run scripts/deploy.js --network inj_testnet
- * 环境变量：无（PRIVATE_KEY 等由 hardhat 网络配置与 .env 提供）
+ * 选网仅支持环境变量：
+ *   DEPLOY_NETWORK=inj_testnet bunx hardhat run scripts/deploy.js
+ *   DEPLOY_NETWORK=inj_mainnet bunx hardhat run scripts/deploy.js
+ * 环境变量：PRIVATE_KEY；DEPLOY_NETWORK 必填（inj_testnet | inj_mainnet | testnet | mainnet）
  */
 
 import { createInterface } from "node:readline";
@@ -11,6 +13,7 @@ import { writeFileSync, mkdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { existsSync, readFileSync, appendFileSync } from "node:fs";
+import { execSync } from "node:child_process";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -22,6 +25,14 @@ const FALLBACK_GAS_LIMIT_COMMENTS = 3_000_000n;  // 评论合约含依赖，需�
 const GAS_BUFFER_PERCENT = 120n;
 const GAS_PRICE = 160_000_000n;
 const INJ_DECIMALS = 18;
+
+function getNetworkFromEnv() {
+  const raw = (process.env.DEPLOY_NETWORK || process.env.NETWORK || "").trim().toLowerCase();
+  if (raw === "testnet" || raw === "inj_testnet") return "inj_testnet";
+  if (raw === "mainnet" || raw === "inj_mainnet") return "inj_mainnet";
+  if (["inj_testnet", "inj_mainnet"].includes(raw)) return raw;
+  return null;
+}
 
 function askConfirm(question) {
   const rl = createInterface({ input: process.stdin, output: process.stdout });
@@ -54,7 +65,22 @@ function saveDeployments(network, data) {
 }
 
 async function main() {
-  const network = hre.network?.name && hre.network.name !== "hardhat" ? hre.network.name : (process.env.HARDHAT_NETWORK || process.env.NETWORK || "inj_testnet");
+  const chosen = getNetworkFromEnv();
+  if (!chosen) {
+    console.error("请设置环境变量 DEPLOY_NETWORK=inj_testnet 或 DEPLOY_NETWORK=inj_mainnet");
+    process.exit(1);
+  }
+  const isChild = process.env.__DEPLOY_REEXEC === "1";
+  if (!isChild && hre.network?.name !== chosen) {
+    console.log("切换网络:", chosen);
+    execSync(`bunx hardhat run scripts/deploy.js --network ${chosen}`, {
+      stdio: "inherit",
+      cwd: join(__dirname, ".."),
+      env: { ...process.env, DEPLOY_NETWORK: chosen, __DEPLOY_REEXEC: "1" },
+    });
+    return;
+  }
+  const network = hre.network?.name || chosen;
   const publicClient = await viem.getPublicClient();
   const [wallet] = await viem.getWalletClients();
 

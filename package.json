@@ -7,7 +7,9 @@
   "scripts": {
     "test": "hardhat test",
     "compile": "hardhat compile",
-    "deploy": "bunx hardhat run scripts/deploy.js --network inj_testnet"
+    "deploy": "bunx hardhat run scripts/deploy.js",
+    "deploy:testnet": "DEPLOY_NETWORK=inj_testnet bunx hardhat run scripts/deploy.js",
+    "deploy:mainnet": "DEPLOY_NETWORK=inj_mainnet bunx hardhat run scripts/deploy.js"
   },
   "license": "MIT",
   "devDependencies": {

@@ -1,20 +1,29 @@
 /**
  * 检查已部署的 ActivityFactory 与（可选）ActivityComments。
- * 地址来源（优先级）：环境变量 ACTIVITY_FACTORY_ADDRESS / ACTIVITY_COMMENTS_ADDRESS
- * 或 deployments/<network>.json（使用 --network 时的网络名）。
+ * 地址来源：环境变量或 deployments/<network>.json。
  *
- * 用法：bunx hardhat run scripts/check-deployment.js --network inj_testnet
- * 或：ACTIVITY_FACTORY_ADDRESS=0x... ACTIVITY_COMMENTS_ADDRESS=0x... bunx hardhat run scripts/check-deployment.js --network inj_testnet
+ * 选网仅支持环境变量：
+ *   DEPLOY_NETWORK=inj_testnet bunx hardhat run scripts/check-deployment.js
+ *   DEPLOY_NETWORK=inj_mainnet bunx hardhat run scripts/check-deployment.js
  */
 
 import { readFileSync, existsSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+import { execSync } from "node:child_process";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const { default: hre } = await import("hardhat");
 const { viem } = await hre.network.connect();
+
+function getNetworkFromEnv() {
+  const raw = (process.env.DEPLOY_NETWORK || process.env.NETWORK || "").trim().toLowerCase();
+  if (raw === "testnet" || raw === "inj_testnet") return "inj_testnet";
+  if (raw === "mainnet" || raw === "inj_mainnet") return "inj_mainnet";
+  if (["inj_testnet", "inj_mainnet"].includes(raw)) return raw;
+  return null;
+}
 
 function loadDeployments(network) {
   const path = join(__dirname, "..", "deployments", `${network}.json`);
@@ -27,30 +36,43 @@ function loadDeployments(network) {
 }
 
 async function main() {
-  const network = hre.network?.name || "unknown";
-  let factoryAddress = process.env.ACTIVITY_FACTORY_ADDRESS;
-  let commentsAddress = process.env.ACTIVITY_COMMENTS_ADDRESS ?? null;
+  const chosen = getNetworkFromEnv();
+  if (!chosen) {
+    console.error("请设置环境变量 DEPLOY_NETWORK=inj_testnet 或 DEPLOY_NETWORK=inj_mainnet");
+    process.exit(1);
+  }
+  const isChild = process.env.__DEPLOY_REEXEC === "1";
+  if (!isChild && hre.network?.name !== chosen) {
+    console.log("切换网络:", chosen);
+    execSync(`bunx hardhat run scripts/check-deployment.js --network ${chosen}`, {
+      stdio: "inherit",
+      cwd: join(__dirname, ".."),
+      env: { ...process.env, __DEPLOY_REEXEC: "1" },
+    });
+    return;
+  }
+  const network = hre.network?.name || chosen;
+  function loadDeployments() {
+    try {
+      const path = join(__dirname, "..", "deployments", `${network}.json`);
+      if (existsSync(path)) return JSON.parse(readFileSync(path, "utf8"));
+    } catch {}
+    return null;
+  }
+  const deployment = loadDeployments();
+  const FACTORY_ADDRESS = process.env.ACTIVITY_FACTORY_ADDRESS || deployment?.factory || "";
+  const COMMENTS_ADDRESS = process.env.ACTIVITY_COMMENTS_ADDRESS || deployment?.comments || "";
 
-  if (!factoryAddress) {
-    const deployment = loadDeployments(network);
-    if (deployment?.factory) {
-      factoryAddress = deployment.factory;
-      if (deployment.comments) commentsAddress = deployment.comments;
-      console.log("已从 deployments/" + network + ".json 读取地址");
-    } else {
-      factoryAddress = "0x868c2995d4eeace5f031333aba86651f0f63092e";
-      console.log("未设置 ACTIVITY_FACTORY_ADDRESS，使用默认工厂地址");
-    }
-  } else if (!commentsAddress && process.env.ACTIVITY_COMMENTS_ADDRESS === undefined) {
-    const deployment = loadDeployments(network);
-    if (deployment?.comments) commentsAddress = deployment.comments;
+  if (!FACTORY_ADDRESS) {
+    console.error("未设置 ACTIVITY_FACTORY_ADDRESS 或 deployments/<network>.json 中无 factory 地址");
+    return;
   }
 
   const publicClient = await viem.getPublicClient();
 
   console.log("\n--- ActivityFactory 链上检查 ---");
-  console.log("合约地址:", factoryAddress);
-  const factoryCode = await publicClient.getBytecode({ address: factoryAddress });
+  console.log("合约地址:", FACTORY_ADDRESS);
+  const factoryCode = await publicClient.getBytecode({ address: FACTORY_ADDRESS });
   const factoryHasCode = factoryCode && factoryCode.length > 2;
   console.log("链上是否有代码:", factoryHasCode ? "是" : "否");
 
@@ -60,7 +82,7 @@ async function main() {
     return;
   }
 
-  const factory = await viem.getContractAt("ActivityFactory", factoryAddress);
+  const factory = await viem.getContractAt("ActivityFactory", FACTORY_ADDRESS);
   let owner;
   try {
     owner = await factory.read.owner();
@@ -72,17 +94,17 @@ async function main() {
   console.log("当前活动数量:", activityIds.length);
   console.log("活动 ID 列表:", activityIds.length ? activityIds : "(暂无)");
 
-  if (commentsAddress) {
+  if (COMMENTS_ADDRESS) {
     console.log("\n--- ActivityComments 链上检查 ---");
-    console.log("合约地址:", commentsAddress);
-    const commentsCode = await publicClient.getBytecode({ address: commentsAddress });
+    console.log("合约地址:", COMMENTS_ADDRESS);
+    const commentsCode = await publicClient.getBytecode({ address: COMMENTS_ADDRESS });
     const commentsHasCode = commentsCode && commentsCode.length > 2;
     console.log("链上是否有代码:", commentsHasCode ? "是" : "否");
     if (commentsHasCode) {
-      const comments = await viem.getContractAt("ActivityComments", commentsAddress);
+      const comments = await viem.getContractAt("ActivityComments", COMMENTS_ADDRESS);
       const boundFactory = await comments.read.factory();
       console.log("绑定的 Factory:", boundFactory);
-      console.log("与当前 Factory 一致:", boundFactory.toLowerCase() === factoryAddress.toLowerCase() ? "是" : "否");
+      console.log("与当前 Factory 一致:", boundFactory.toLowerCase() === FACTORY_ADDRESS.toLowerCase() ? "是" : "否");
     }
   } else {
     console.log("\n(未配置 ACTIVITY_COMMENTS_ADDRESS，跳过评论合约检查)");

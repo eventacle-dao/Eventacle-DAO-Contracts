@@ -34,7 +34,13 @@ export default defineConfig({
       url: process.env.INJ_TESTNET_RPC_URL || 'https://k8s.testnet.json-rpc.injective.network/',
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
       chainId: 1439,
-      type: 'http', // 明确指定网络类型为 HTTP
+      type: 'http',
+    },
+    inj_mainnet: {
+      url: process.env.INJ_MAINNET_RPC_URL || 'https://sentry.evm-rpc.injective.network/',
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
+      chainId: 1776,
+      type: 'http',
     },
   },
 
@@ -50,6 +56,19 @@ export default defineConfig({
         blockscout: {
           url: 'https://testnet.blockscout.injective.network',
           apiUrl: 'https://testnet.blockscout-api.injective.network/api',
+        },
+      },
+    },
+    1776: {
+      name: 'Injective Mainnet',
+      blockExplorers: {
+        etherscan: {
+          url: 'https://explorer.injective.network',
+          apiUrl: 'https://explorer.injective.network/api',
+        },
+        blockscout: {
+          url: 'https://blockscout.injective.network',
+          apiUrl: 'https://blockscout-api.injective.network/api',
         },
       },
     },

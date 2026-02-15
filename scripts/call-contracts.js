@@ -7,6 +7,7 @@
  *   ACTIVITY_GAS_LIMIT          写操作 gas 上限（可选，未设则按估算值×130% 自动设置）
  *   ACTIVITY_GAS_PRICE          gas 单价（可选，默认 160000000）
  *   ACTIVITY_SKIP_CONFIRM=1     跳过执行前确认（脚本/CI 用）
+ *   DEPLOY_NETWORK              选网必填：inj_testnet | inj_mainnet | testnet | mainnet
  *   ACTIVITY_CMD                命令（见下）
  *
  * 命令与参数：
@@ -34,13 +35,38 @@ import { readFileSync, existsSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { createInterface } from "node:readline";
 import { fileURLToPath } from "node:url";
+import { execSync } from "node:child_process";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const { default: hre } = await import("hardhat");
 const { viem } = await hre.network.connect();
 
-const network = hre.network?.name || "unknown";
+function getNetworkFromEnv() {
+  const raw = (process.env.DEPLOY_NETWORK || process.env.NETWORK || "").trim().toLowerCase();
+  if (raw === "testnet" || raw === "inj_testnet") return "inj_testnet";
+  if (raw === "mainnet" || raw === "inj_mainnet") return "inj_mainnet";
+  if (["inj_testnet", "inj_mainnet"].includes(raw)) return raw;
+  return null;
+}
+
+const chosen = getNetworkFromEnv();
+if (!chosen) {
+  console.error("请设置环境变量 DEPLOY_NETWORK=inj_testnet 或 DEPLOY_NETWORK=inj_mainnet");
+  process.exit(1);
+}
+const isChild = process.env.__DEPLOY_REEXEC === "1";
+if (!isChild && hre.network?.name !== chosen) {
+  console.log("切换网络:", chosen);
+  execSync(`bunx hardhat run scripts/call-contracts.js --network ${chosen}`, {
+    stdio: "inherit",
+    cwd: join(__dirname, ".."),
+    env: { ...process.env, __DEPLOY_REEXEC: "1" },
+  });
+  return;
+}
+
+const network = hre.network?.name || chosen;
 function loadDeployments() {
   try {
     const path = join(__dirname, "..", "deployments", `${network}.json`);
@@ -107,7 +133,7 @@ async function waitTxThenConfirm(publicClient, txHash, label = "交易") {
 }
 
 function printHelp() {
-  console.log("环境变量：ACTIVITY_FACTORY_ADDRESS、ACTIVITY_COMMENTS_ADDRESS 可选，未设则从 deployments/<network>.json 读取");
+  console.log("环境变量：DEPLOY_NETWORK 必填（inj_testnet | inj_mainnet）；ACTIVITY_FACTORY_ADDRESS、ACTIVITY_COMMENTS_ADDRESS 可选");
   console.log("ACTIVITY_CMD = create | list | info | mint | addMinter | removeMinter | comment | reply | comments-list");
   console.log("工厂地址:", FACTORY_ADDRESS || "(未设置，请部署或设 ACTIVITY_FACTORY_ADDRESS)");
   console.log("评论合约:", COMMENTS_ADDRESS || "(未设置，comment/reply/comments-list 需要部署 ActivityComments 并写入 deployments)");
