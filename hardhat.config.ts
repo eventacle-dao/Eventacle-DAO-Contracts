@@ -1,13 +1,10 @@
-// hardhat.config.js (ES Module for Hardhat v3)
-import 'dotenv/config'; // 自动加载 .env 文件中的环境变量
+// Hardhat 3 + Viem（ES Module）
+import "dotenv/config";
 
-// 导入 v3 所需的插件和工具
-import { defineConfig } from 'hardhat/config';
-import hardhatToolboxViemPlugin from '@nomicfoundation/hardhat-toolbox-viem';
-
+import { defineConfig } from "hardhat/config";
+import hardhatToolboxViemPlugin from "@nomicfoundation/hardhat-toolbox-viem";
 
 export default defineConfig({
-  // 插件列表：注册所有需要启用的 Hardhat 插件
   plugins: [hardhatToolboxViemPlugin],
 
   // Solidity 编译器配置（支持多配置文件）

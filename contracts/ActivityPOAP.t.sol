@@ -5,6 +5,8 @@ import {ActivityPOAP} from "./ActivityPOAP.sol";
 import {Test} from "forge-std/Test.sol";
 
 contract ActivityPOAPTest is Test {
+    event TrustStampMinted(address indexed to, uint256 indexed tokenId);
+
     ActivityPOAP poap;
     address creator;
     address user1;
@@ -106,16 +108,92 @@ contract ActivityPOAPTest is Test {
         vm.prank(creator);
         poap.mint(user1);
         vm.prank(creator);
-        poap.mint(user1);
-        vm.prank(creator);
         poap.mint(user2);
         address[] memory owners = new address[](3);
         owners[0] = user1;
         owners[1] = user2;
         owners[2] = creator;
         uint256[] memory balances = poap.balanceOfBatch(owners);
-        assertEq(balances[0], 2);
+        assertEq(balances[0], 1);
         assertEq(balances[1], 1);
         assertEq(balances[2], 0);
+    }
+
+    function test_Mint_TwiceToSameAddress_Reverts() public {
+        vm.prank(creator);
+        poap.mint(user1);
+        vm.prank(creator);
+        vm.expectRevert("POAP already claimed by this address");
+        poap.mint(user1);
+    }
+
+    function test_PoapOf() public {
+        assertEq(poap.poapOf(user1), 0);
+        vm.prank(creator);
+        poap.mint(user1);
+        assertEq(poap.poapOf(user1), 1);
+        assertEq(poap.poapOf(user2), 0);
+    }
+
+    function test_MintedAt_RecordsTimestamp() public {
+        vm.prank(creator);
+        poap.mint(user1);
+        assertEq(poap.mintedAt(1), block.timestamp);
+    }
+
+    function test_Approve_Reverts() public {
+        vm.prank(creator);
+        poap.mint(user1);
+        vm.prank(user1);
+        vm.expectRevert("POAP is non-transferable");
+        poap.approve(user2, 1);
+    }
+
+    function test_SetApprovalForAll_Reverts() public {
+        vm.prank(creator);
+        poap.mint(user1);
+        vm.prank(user1);
+        vm.expectRevert("POAP is non-transferable");
+        poap.setApprovalForAll(user2, true);
+    }
+
+    function test_TransferFrom_Reverts() public {
+        vm.prank(creator);
+        poap.mint(user1);
+        vm.prank(user1);
+        vm.expectRevert("POAP is non-transferable");
+        poap.transferFrom(user1, user2, 1);
+    }
+
+    function test_SafeTransferFrom_NoData_Reverts() public {
+        vm.prank(creator);
+        poap.mint(user1);
+        vm.prank(user1);
+        vm.expectRevert("POAP is non-transferable");
+        poap.safeTransferFrom(user1, user2, 1);
+    }
+
+    function test_SafeTransferFrom_WithData_Reverts() public {
+        vm.prank(creator);
+        poap.mint(user1);
+        vm.prank(user1);
+        vm.expectRevert("POAP is non-transferable");
+        poap.safeTransferFrom(user1, user2, 1, "");
+    }
+
+    function test_TrustStampMinted_Event() public {
+        vm.prank(creator);
+        vm.expectEmit(true, true, true, true);
+        emit TrustStampMinted(user1, 1);
+        poap.mint(user1);
+    }
+
+    function test_TokenIdsIncrementSequentially() public {
+        vm.prank(creator);
+        poap.mint(user1);
+        assertEq(poap.poapOf(user1), 1);
+        vm.prank(creator);
+        poap.mint(user2);
+        assertEq(poap.poapOf(user2), 2);
     }
 }

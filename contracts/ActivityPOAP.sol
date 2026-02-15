@@ -6,8 +6,8 @@ import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 /**
  * @title ActivityPOAP
  * @dev 每个活动独立的出席证明 NFT（TrustStamp）。
- *      铸造权限由 minter 角色管理，创建者可自由添加/移除 minter，
- *      但 Eventacle 协议无权干预。
+ *      POAP 不可转让，每个地址至多持有一个；铸造权限由 minter 管理，创建者可自由添加/移除 minter。
+ *      Eventacle 协议无权干预。
  */
 contract ActivityPOAP is ERC721 {
     // 活动创建者地址（用于识别，但不具备特殊权限）
@@ -18,14 +18,17 @@ contract ActivityPOAP is ERC721 {
     
     // 当前 token ID 计数器
     uint256 private _tokenIds;
-    
+
     // 记录每个 tokenId 对应的铸造时间
     mapping(uint256 => uint256) public mintedAt;
-    
+
+    // 每个持有地址对应的 tokenId（最多持有一个POAP，无则为0）
+    mapping(address => uint256) private poapTokenOf;
+
     event MinterAdded(address indexed minter);
     event MinterRemoved(address indexed minter);
     event TrustStampMinted(address indexed to, uint256 indexed tokenId);
-    
+
     /**
      * @param name POAP 名称
      * @param symbol POAP 符号
@@ -67,24 +70,33 @@ contract ActivityPOAP is ERC721 {
     function removeMinter(address minter) external {
         require(msg.sender == creator, "Only creator can remove minter");
         require(minters[minter], "Not a minter");
-        // 不能移除创建者自己（可选，但为了安全建议保留创建者的minter权限）
         require(minter != creator, "Cannot remove creator");
         minters[minter] = false;
         emit MinterRemoved(minter);
     }
     
     /**
-     * @dev 铸造 TrustStamp 给指定地址
+     * @dev 铸造 TrustStamp 给指定地址。不可重复领取。
      * @param to 接收者地址
      * @return tokenId 铸造的 NFT ID
      */
     function mint(address to) external onlyMinter returns (uint256) {
+        require(balanceOf(to) == 0, "POAP already claimed by this address");
         _tokenIds++;
         uint256 newTokenId = _tokenIds;
         _safeMint(to, newTokenId);
         mintedAt[newTokenId] = block.timestamp;
+        poapTokenOf[to] = newTokenId;
         emit TrustStampMinted(to, newTokenId);
         return newTokenId;
+    }
+
+    /**
+     * @dev Address 拥有的唯一 POAP tokenId，如未领取则为0
+     */
+    function poapOf(address owner) external view returns (uint256) {
+        if (balanceOf(owner) == 0) return 0;
+        return poapTokenOf[owner];
     }
     
     /**
@@ -103,5 +115,24 @@ contract ActivityPOAP is ERC721 {
             balances[i] = balanceOf(owners[i]);
         }
         return balances;
+    }
+
+    /**
+     * @dev Override _update to block transfers. Mint (from==0) and burn (to==0) allowed.
+     */
+    function _update(address to, uint256 tokenId, address auth) internal virtual override returns (address) {
+        address from = _ownerOf(tokenId);
+        if (from != address(0) && to != address(0)) {
+            revert("POAP is non-transferable");
+        }
+        return super._update(to, tokenId, auth);
+    }
+
+    function approve(address, uint256) public pure override {
+        revert("POAP is non-transferable");
+    }
+
+    function setApprovalForAll(address, bool) public pure override {
+        revert("POAP is non-transferable");
     }
 }
