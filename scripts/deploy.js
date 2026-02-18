@@ -1,11 +1,14 @@
 /**
- * 部署 ActivityFactory，并可选部署 ActivityComments。
+ * 部署 ActivityFactory，并可选部署 ActivityComments、ReviewStaking。
  * 部署结果写入 deployments/<network>.json。
  *
- * 选网仅支持环境变量：
+ * 选网（必填）：
  *   DEPLOY_NETWORK=inj_testnet bunx hardhat run scripts/deploy.js
  *   DEPLOY_NETWORK=inj_mainnet bunx hardhat run scripts/deploy.js
- * 环境变量：PRIVATE_KEY；DEPLOY_NETWORK 必填（inj_testnet | inj_mainnet | testnet | mainnet）
+ * 环境变量：
+ *   PRIVATE_KEY          - 部署者私钥
+ *   DEPLOY_NETWORK       - inj_testnet | inj_mainnet（或 testnet/mainnet）
+ *   REVIEW_REQUIRED_INJ  - 可选，获得 review 权限所需质押 INJ 数量（默认 100），仅部署 ReviewStaking 时生效
  */
 
 import { createInterface } from "node:readline";
@@ -21,10 +24,12 @@ const { default: hre } = await import("hardhat");
 const { viem } = await hre.network.connect();
 
 const FALLBACK_GAS_LIMIT_FACTORY = 3_500_000n;
-const FALLBACK_GAS_LIMIT_COMMENTS = 3_000_000n;  // 评论合约含依赖，需较高 gas
+const FALLBACK_GAS_LIMIT_COMMENTS = 3_000_000n;
+const FALLBACK_GAS_LIMIT_STAKING = 1_500_000n;
 const GAS_BUFFER_PERCENT = 120n;
 const GAS_PRICE = 160_000_000n;
 const INJ_DECIMALS = 18;
+const DEFAULT_REVIEW_REQUIRED_INJ = 100;
 
 function getNetworkFromEnv() {
   const raw = (process.env.DEPLOY_NETWORK || process.env.NETWORK || "").trim().toLowerCase();
@@ -61,6 +66,27 @@ function saveDeployments(network, data) {
   console.log("已写入:", path);
   if (typeof existsSync === "function" && existsSync(backupPath)) {
     console.log("已追加备份到:", backupPath);
+  }
+}
+
+async function estimateDeployGas(artifact, args, publicClient, wallet, fallback) {
+  try {
+    const { encodeDeployData } = await import("viem/utils");
+    const bytecode = typeof artifact.bytecode === "string" ? artifact.bytecode : artifact.bytecode?.object;
+    const deployData = encodeDeployData({
+      abi: artifact.abi,
+      bytecode: bytecode?.startsWith("0x") ? bytecode : `0x${bytecode || ""}`,
+      args: args ?? [],
+    });
+    const estimated = await publicClient.estimateGas({
+      account: wallet.account,
+      data: deployData,
+      value: 0n,
+      gasPrice: GAS_PRICE,
+    });
+    return (estimated * GAS_BUFFER_PERCENT) / 100n;
+  } catch (e) {
+    return fallback;
   }
 }
 
@@ -126,53 +152,87 @@ async function main() {
   const deployment = {
     chainId: (await publicClient.getChainId()).toString(),
     factory: activityFactory.address,
+    reviewStaking: null,
     comments: null,
     deployedAt: new Date().toISOString(),
   };
 
-  // ---------- 2. 可选部署 ActivityComments ----------
-  const deployComments = await askConfirm("是否同时部署 ActivityComments（评论合约，依赖本 Factory）? (y/n): ");
+  const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
+  let reviewGateAddress = ZERO_ADDRESS;
+
+  // ---------- 2. 可选部署 ReviewStaking（质押 INJ 获得 review 权限）----------
+  const deployStaking = await askConfirm("是否部署 ReviewStaking（质押 INJ 获得 review 权限，供 ActivityComments 使用）? (y/n): ");
+  if (deployStaking) {
+    const stakingArtifact = await hre.artifacts.readArtifact("ReviewStaking");
+    const requiredInj = Number(process.env.REVIEW_REQUIRED_INJ ?? DEFAULT_REVIEW_REQUIRED_INJ) || DEFAULT_REVIEW_REQUIRED_INJ;
+    const requiredStakeWei = BigInt(requiredInj) * 10n ** BigInt(INJ_DECIMALS);
+
+    const gasLimitStaking = await estimateDeployGas(
+      stakingArtifact,
+      [wallet.account.address, requiredStakeWei],
+      publicClient,
+      wallet,
+      FALLBACK_GAS_LIMIT_STAKING,
+    );
+    const costStakingINJ = Number(gasLimitStaking * GAS_PRICE) / 10 ** INJ_DECIMALS;
+    console.log("[ReviewStaking] 获得 review 权限需质押:", requiredInj, "INJ | 预估费用（上限）:", costStakingINJ.toFixed(6), "INJ");
+
+    const reviewStaking = await viem.deployContract("ReviewStaking", [wallet.account.address, requiredStakeWei], {
+      gasPrice: GAS_PRICE,
+      gas: gasLimitStaking,
+    });
+
+    const confirmedStaking = await askConfirm("确认部署 ReviewStaking? (y/n): ");
+    if (!confirmedStaking) {
+      console.log("已取消部署。");
+      return;
+    }
+
+    console.log("ReviewStaking 已部署:", reviewStaking.address);
+    deployment.reviewStaking = reviewStaking.address;
+    deployment.constructorArgs = deployment.constructorArgs || {};
+    deployment.constructorArgs.reviewStaking = [wallet.account.address, String(requiredStakeWei)];
+    reviewGateAddress = reviewStaking.address;
+  }
+
+  // ---------- 3. 可选部署 ActivityComments ----------
+  const deployComments = await askConfirm("是否同时部署 ActivityComments（评论合约，依赖 Factory；若已部署 ReviewStaking 将自动绑定为 review 门控）? (y/n): ");
   if (deployComments) {
     const commentsArtifact = await hre.artifacts.readArtifact("ActivityComments");
-    const commentsBytecode = typeof commentsArtifact.bytecode === "string"
-      ? commentsArtifact.bytecode
-      : commentsArtifact.bytecode?.object;
-    if (!commentsBytecode || commentsBytecode === "0x") {
-      throw new Error("ActivityComments 未编译或无 bytecode");
-    }
+    const gasLimitComments = await estimateDeployGas(
+      commentsArtifact,
+      [activityFactory.address, reviewGateAddress],
+      publicClient,
+      wallet,
+      FALLBACK_GAS_LIMIT_COMMENTS,
+    );
+    const costCommentsINJ = Number(gasLimitComments * GAS_PRICE) / 10 ** INJ_DECIMALS;
+    console.log("[Comments] reviewGate:", reviewGateAddress === ZERO_ADDRESS ? "无" : reviewGateAddress, "| 预估费用（上限）:", costCommentsINJ.toFixed(6), "INJ");
 
-    let gasLimitComments = FALLBACK_GAS_LIMIT_COMMENTS;
-    try {
-      const { encodeDeployData } = await import("viem/utils");
-      const deployData = encodeDeployData({
-        abi: commentsArtifact.abi,
-        bytecode: commentsBytecode.startsWith("0x") ? commentsBytecode : `0x${commentsBytecode}`,
-        args: [activityFactory.address],
-      });
-      const estimated = await publicClient.estimateGas({
-        account: wallet.account,
-        data: deployData,
-        value: 0n,
-        gasPrice: GAS_PRICE,
-      });
-      gasLimitComments = (estimated * GAS_BUFFER_PERCENT) / 100n;
-      console.log("[Comments] 预估 gas:", estimated.toString(), "| 使用上限:", gasLimitComments.toString());
-    } catch (e) {
-      console.log("[Comments] Gas 估算失败，使用固定上限:", gasLimitComments.toString(), "|", e?.message || e);
-    }
-
-    const activityComments = await viem.deployContract("ActivityComments", [activityFactory.address], {
+    const activityComments = await viem.deployContract("ActivityComments", [activityFactory.address, reviewGateAddress], {
       gasPrice: GAS_PRICE,
       gas: gasLimitComments,
     });
+
+    const confirmedComments = await askConfirm("确认部署 ActivityComments? (y/n): ");
+    if (!confirmedComments) {
+      console.log("已取消部署。");
+      return;
+    }
+
     console.log("ActivityComments 已部署:", activityComments.address);
     deployment.comments = activityComments.address;
+    deployment.constructorArgs = deployment.constructorArgs || {};
+    deployment.constructorArgs.comments = [activityFactory.address, reviewGateAddress];
   }
 
   saveDeployments(network, deployment);
 
   console.log("\n--- 部署结果 ---");
   console.log("ACTIVITY_FACTORY_ADDRESS=" + deployment.factory);
+  if (deployment.reviewStaking) {
+    console.log("REVIEW_STAKING_ADDRESS=" + deployment.reviewStaking);
+  }
   if (deployment.comments) {
     console.log("ACTIVITY_COMMENTS_ADDRESS=" + deployment.comments);
   }

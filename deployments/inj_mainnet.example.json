@@ -1,0 +1,11 @@
+{
+  "chainId": "1776",
+  "factory": "0x...",
+  "reviewStaking": "0x...",
+  "comments": "0x...",
+  "deployedAt": "2026-02-18T11:26:56.804Z",
+  "constructorArgs": {
+    "reviewStaking": ["0x部署者地址", "100000000000000000000"],
+    "comments": ["0xFactory地址", "0xReviewStaking地址或0x0000000000000000000000000000000000000000"]
+  }
+}
