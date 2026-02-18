@@ -23,7 +23,7 @@ contract ActivityCommentsTest is Test {
         factory = new ActivityFactory();
         vm.prank(user1);
         factory.createActivity("Test Activity", "TA", "https://ipfs.io/ipfs/QmHash");
-        comments = new ActivityComments(address(factory));
+        comments = new ActivityComments(address(factory), address(0));
         poap = ActivityPOAP(factory.getPOAPContract(ACTIVITY_ID));
         vm.prank(user1);
         poap.mint(user1);

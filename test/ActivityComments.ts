@@ -13,7 +13,7 @@ describe("ActivityComments", async function () {
 
   it("constructor sets factory address", async function () {
     const factory = await viem.deployContract("ActivityFactory");
-    const comments = await viem.deployContract("ActivityComments", [factory.address]);
+    const comments = await viem.deployContract("ActivityComments", [factory.address, "0x0000000000000000000000000000000000000000"]);
     assert.equal(
       getAddress(await comments.read.factory()),
       getAddress(factory.address),
@@ -22,7 +22,7 @@ describe("ActivityComments", async function () {
 
   it("postComment reverts for non-existent activity", async function () {
     const factory = await viem.deployContract("ActivityFactory");
-    const comments = await viem.deployContract("ActivityComments", [factory.address]);
+    const comments = await viem.deployContract("ActivityComments", [factory.address, "0x0000000000000000000000000000000000000000"]);
     await viem.assertions.revertWithCustomError(
       comments.write.postComment(["activity-999", "ipfs://QmX"]),
       comments,
@@ -40,7 +40,7 @@ describe("ActivityComments", async function () {
       "TA",
       "https://ipfs.io/ipfs/QmHash",
     ]);
-    const comments = await viem.deployContract("ActivityComments", [factory.address]);
+    const comments = await viem.deployContract("ActivityComments", [factory.address, "0x0000000000000000000000000000000000000000"]);
     await viem.assertions.revertWithCustomError(
       comments.write.postComment(["activity-1", "ipfs://QmX"]),
       comments,
@@ -63,7 +63,7 @@ describe("ActivityComments", async function () {
       client: { wallet: alice },
     });
     await poapAsAlice.write.mint([deployer.account!.address]);
-    const comments = await viem.deployContract("ActivityComments", [factory.address]);
+    const comments = await viem.deployContract("ActivityComments", [factory.address, "0x0000000000000000000000000000000000000000"]);
     assert.equal(await comments.read.getCommentCount(["activity-1"]), 0n);
 
     await comments.write.postComment(["activity-1", "ipfs://QmComment1"]);
@@ -95,7 +95,7 @@ describe("ActivityComments", async function () {
       client: { wallet: alice },
     });
     await poapAsAlice.write.mint([deployer.account!.address]);
-    const comments = await viem.deployContract("ActivityComments", [factory.address]);
+    const comments = await viem.deployContract("ActivityComments", [factory.address, "0x0000000000000000000000000000000000000000"]);
     await comments.write.postComment(["activity-1", "ipfs://QmOne"]);
     const [commenter, contentURI, reviewURI, isVisible, timestamp, replyToIndex] =
       await comments.read.getComment(["activity-1", 0n]);
@@ -121,7 +121,7 @@ describe("ActivityComments", async function () {
     await poapAsAlice.write.mint([deployer.account!.address]);
     await poapAsAlice.write.mint([alice.account!.address]);
     await poapAsAlice.write.mint([bob.account!.address]);
-    const comments = await viem.deployContract("ActivityComments", [factory.address]);
+    const comments = await viem.deployContract("ActivityComments", [factory.address, "0x0000000000000000000000000000000000000000"]);
     const commentsAsAlice = await viem.getContractAt("ActivityComments", comments.address, {
       client: { wallet: alice },
     });
@@ -151,7 +151,7 @@ describe("ActivityComments", async function () {
     });
     await poapAsAlice.write.mint([deployer.account!.address]);
     await poapAsAlice.write.mint([bob.account!.address]);
-    const comments = await viem.deployContract("ActivityComments", [factory.address]);
+    const comments = await viem.deployContract("ActivityComments", [factory.address, "0x0000000000000000000000000000000000000000"]);
     await comments.write.postComment(["activity-1", "ipfs://root"]);
     const commentsAsBob = await viem.getContractAt("ActivityComments", comments.address, {
       client: { wallet: bob },
@@ -171,10 +171,66 @@ describe("ActivityComments", async function () {
       client: { wallet: alice },
     });
     await factoryAsAlice.write.createActivity(["A", "A", "https://x"]);
-    const comments = await viem.deployContract("ActivityComments", [factory.address]);
+    const comments = await viem.deployContract("ActivityComments", [factory.address, "0x0000000000000000000000000000000000000000"]);
     await viem.assertions.revertWith(
       comments.read.getComment(["activity-1", 0n]),
       "Comment index out of range",
     );
+  });
+
+  it("setCommentVisible reverts when reviewGate is zero (NoReviewGate)", async function () {
+    const factory = await viem.deployContract("ActivityFactory");
+    const factoryAsAlice = await viem.getContractAt("ActivityFactory", factory.address, {
+      client: { wallet: alice },
+    });
+    await factoryAsAlice.write.createActivity(["A", "A", "https://x"]);
+    const poapAddress = await factory.read.getPOAPContract(["activity-1"]);
+    const poapAsAlice = await viem.getContractAt("ActivityPOAP", poapAddress, {
+      client: { wallet: alice },
+    });
+    await poapAsAlice.write.mint([alice.account!.address]);
+    const comments = await viem.deployContract("ActivityComments", [factory.address, "0x0000000000000000000000000000000000000000"]);
+    const commentsAsAlice = await viem.getContractAt("ActivityComments", comments.address, {
+      client: { wallet: alice },
+    });
+    await commentsAsAlice.write.postComment(["activity-1", "ipfs://c"]);
+    await viem.assertions.revertWithCustomError(
+      commentsAsAlice.write.setCommentVisible(["activity-1", 0n, true]),
+      comments,
+      "NoReviewGate",
+    );
+  });
+
+  it("setCommentVisible works when caller has review permission via ReviewStaking", async function () {
+    const requiredStake = 100n * 10n ** 18n;
+    const staking = await viem.deployContract("ReviewStaking", [
+      deployer.account!.address,
+      requiredStake,
+    ]);
+    const factory = await viem.deployContract("ActivityFactory");
+    const factoryAsAlice = await viem.getContractAt("ActivityFactory", factory.address, {
+      client: { wallet: alice },
+    });
+    await factoryAsAlice.write.createActivity(["A", "A", "https://x"]);
+    const poapAddress = await factory.read.getPOAPContract(["activity-1"]);
+    const poapAsAlice = await viem.getContractAt("ActivityPOAP", poapAddress, {
+      client: { wallet: alice },
+    });
+    await poapAsAlice.write.mint([alice.account!.address]);
+    const comments = await viem.deployContract("ActivityComments", [factory.address, staking.address]);
+    const commentsAsAlice = await viem.getContractAt("ActivityComments", comments.address, {
+      client: { wallet: alice },
+    });
+    await commentsAsAlice.write.postComment(["activity-1", "ipfs://c"]);
+    let [, , , isVisible] = await comments.read.getComment(["activity-1", 0n]);
+    assert.equal(isVisible, false);
+
+    const stakingAsAlice = await viem.getContractAt("ReviewStaking", staking.address, {
+      client: { wallet: alice },
+    });
+    await stakingAsAlice.write.stake({ value: requiredStake });
+    await commentsAsAlice.write.setCommentVisible(["activity-1", 0n, true]);
+    [, , , isVisible] = await comments.read.getComment(["activity-1", 0n]);
+    assert.equal(isVisible, true);
   });
 });

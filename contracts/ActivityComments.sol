@@ -8,6 +8,11 @@ interface IERC721Balance {
     function balanceOf(address owner) external view returns (uint256);
 }
 
+/// @dev 用于校验调用者是否具备 review 权限（如质押 INJ 的 ReviewStaking 合约）
+interface IReviewGate {
+    function hasReviewPermission(address account) external view returns (bool);
+}
+
 /**
  * @title ActivityComments
  * @dev 活动评论合约。仅持有该活动 POAP（出席证明）的地址可发表评论或回复。
@@ -15,6 +20,8 @@ interface IERC721Balance {
  */
 contract ActivityComments {
     ActivityFactory public immutable factory;
+    /// 可选：实现 IReviewGate 的合约地址（如 ReviewStaking）。为 address(0) 时不做 review 权限校验。
+    address public immutable reviewGate;
 
     enum CommentType {
         NORMAL,
@@ -48,9 +55,14 @@ contract ActivityComments {
         uint256 replyToIndex
     );
 
+    event CommentVisibilitySet(string indexed activityId, uint256 indexed commentIndex, bool visible, address setBy);
+
     error ActivityNotFound(string activityId);
     error InvalidReplyToIndex(uint256 replyToIndex, uint256 currentLength);
     error NotPOAPHolder();  // 仅持有该活动 POAP 的地址可发评论
+    error NoReviewGate();
+    error NotReviewer();
+    error CommentIndexOutOfRange();
 
     function _emitCommentPosted(
         string calldata activityId,
@@ -63,8 +75,9 @@ contract ActivityComments {
         emit CommentPosted(activityId, msg.sender, commentIndex, contentURI, reviewURI, isVisible, block.timestamp, replyToIndex_);
     }
 
-    constructor(address _factory) {
+    constructor(address _factory, address _reviewGate) {
         factory = ActivityFactory(payable(_factory));
+        reviewGate = _reviewGate;
     }
 
     /**
@@ -124,6 +137,26 @@ contract ActivityComments {
             })
         );
         _emitCommentPosted(activityId, list.length - 1, contentURI, reviewURI, false, replyToIndex);
+    }
+
+    /**
+     * @dev 设置某条评论的展示状态。仅当已配置 reviewGate 且调用者在其中具备 review 权限时可调用。
+     *      具备 review 权限通常通过质押足够 INJ 获得（见 ReviewStaking）。
+     */
+    function setCommentVisible(string calldata activityId, uint256 commentIndex, bool visible) external {
+        if (reviewGate == address(0)) {
+            revert NoReviewGate();
+        }
+        if (!IReviewGate(reviewGate).hasReviewPermission(msg.sender)) {
+            revert NotReviewer();
+        }
+        bytes32 key = keccak256(abi.encodePacked(activityId));
+        Comment[] storage list = _commentsByActivity[key];
+        if (commentIndex >= list.length) {
+            revert CommentIndexOutOfRange();
+        }
+        list[commentIndex].isVisible = visible;
+        emit CommentVisibilitySet(activityId, commentIndex, visible, msg.sender);
     }
 
     /**
