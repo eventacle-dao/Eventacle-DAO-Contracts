@@ -7,13 +7,18 @@
   "scripts": {
     "test": "hardhat test",
     "compile": "hardhat compile",
-    "deploy": "bunx hardhat run scripts/deploy.js",
-    "deploy:testnet": "DEPLOY_NETWORK=inj_testnet bunx hardhat run scripts/deploy.js",
-    "deploy:mainnet": "DEPLOY_NETWORK=inj_mainnet bunx hardhat run scripts/deploy.js",
     "check-deployment": "bunx hardhat run scripts/check-deployment.js",
+    "check-deployment:testnet": "DEPLOY_NETWORK=inj_testnet bunx hardhat run scripts/check-deployment.js",
+    "check-deployment:mainnet": "DEPLOY_NETWORK=inj_mainnet bunx hardhat run scripts/check-deployment.js",
+    "deploy": "bunx hardhat run scripts/deploy.js",
+    "deploy:all:testnet": "DEPLOY_NETWORK=inj_testnet bunx hardhat run scripts/deploy.js",
+    "deploy:all:mainnet": "DEPLOY_NETWORK=inj_mainnet bunx hardhat run scripts/deploy.js",
     "verify": "bunx hardhat run scripts/verify.js",
     "verify:testnet": "DEPLOY_NETWORK=inj_testnet bunx hardhat run scripts/verify.js",
-    "verify:mainnet": "DEPLOY_NETWORK=inj_mainnet bunx hardhat run scripts/verify.js"
+    "verify:mainnet": "DEPLOY_NETWORK=inj_mainnet bunx hardhat run scripts/verify.js",
+    "deploy:comments-only": "bunx hardhat run scripts/deploy-comments-only.js",
+    "deploy:comments-only:testnet": "DEPLOY_NETWORK=inj_testnet bunx hardhat run scripts/deploy-comments-only.js",
+    "deploy:comments-only:mainnet": "DEPLOY_NETWORK=inj_mainnet bunx hardhat run scripts/deploy-comments-only.js"
   },
   "license": "MIT",
   "devDependencies": {
