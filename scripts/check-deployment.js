@@ -1,6 +1,7 @@
 /**
  * 检查已部署的 ActivityFactory、ReviewStaking（可选）、ActivityComments（可选）。
  * 地址来源：环境变量或 deployments/<network>.json。
+ * 会通过 Blockscout API 检查各合约是否已在区块浏览器上验证。
  *
  * 选网（环境变量）：
  *   DEPLOY_NETWORK=inj_testnet bunx hardhat run scripts/check-deployment.js
@@ -14,6 +15,33 @@ import { fileURLToPath } from "node:url";
 import { execSync } from "node:child_process";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
+
+const BLOCKSCOUT_API_BY_NETWORK = {
+  inj_testnet: "https://testnet.blockscout-api.injective.network/api",
+  inj_mainnet: "https://blockscout-api.injective.network/api",
+};
+
+/**
+ * 通过 Blockscout getsourcecode API 检查合约是否已验证。
+ * @param {string} apiBase - Blockscout API 根地址（如 https://xxx.injective.network/api）
+ * @param {string} address - 合约地址
+ * @returns {Promise<{ verified: boolean, error?: string }>}
+ */
+async function checkContractVerified(apiBase, address) {
+  const url = `${apiBase}?module=contract&action=getsourcecode&address=${address}`;
+  try {
+    const res = await fetch(url);
+    const data = await res.json();
+    if (data.status !== "1" || !Array.isArray(data.result) || data.result.length === 0) {
+      return { verified: false, error: (data.message || "API 返回异常").toString() };
+    }
+    const source = (data.result[0] && data.result[0].SourceCode) || "";
+    const verified = typeof source === "string" && source.trim().length > 0;
+    return { verified };
+  } catch (err) {
+    return { verified: false, error: (err && err.message) || String(err) };
+  }
+}
 
 const { default: hre } = await import("hardhat");
 const { viem } = await hre.network.connect();
@@ -43,6 +71,8 @@ async function main() {
     process.exit(0);
   }
   const network = hre.network?.name || chosen;
+  const blockscoutApi = BLOCKSCOUT_API_BY_NETWORK[network] || null;
+
   function loadDeployments() {
     try {
       const path = join(__dirname, "..", "deployments", `${network}.json`);
@@ -88,6 +118,10 @@ async function main() {
   console.log("Owner:", owner);
   console.log("当前活动数量:", activityIds.length);
   console.log("活动 ID 列表:", activityIds.length ? activityIds : "(暂无)");
+  if (factoryHasCode && blockscoutApi) {
+    const v = await checkContractVerified(blockscoutApi, FACTORY_ADDRESS);
+    console.log("区块浏览器验证:", v.verified ? "是" : "否", v.error ? `(${v.error})` : "");
+  }
 
   if (STAKING_ADDRESS) {
     console.log("\n--- ReviewStaking 链上检查 ---");
@@ -108,6 +142,10 @@ async function main() {
       console.log("Owner:", stakingOwner);
       console.log("获得 review 权限所需质押:", formatInj(requiredStake));
       console.log("当前总质押量:", formatInj(totalStaked));
+      if (blockscoutApi) {
+        const v = await checkContractVerified(blockscoutApi, STAKING_ADDRESS);
+        console.log("区块浏览器验证:", v.verified ? "是" : "否", v.error ? `(${v.error})` : "");
+      }
     }
   } else {
     console.log("\n(未配置 REVIEW_STAKING_ADDRESS，跳过 ReviewStaking 检查)");
@@ -129,6 +167,10 @@ async function main() {
       console.log("Review 门控 (reviewGate):", reviewGate === zeroAddr ? "未设置 (0x0)" : reviewGate);
       if (STAKING_ADDRESS && reviewGate !== zeroAddr) {
         console.log("与当前 ReviewStaking 一致:", reviewGate.toLowerCase() === STAKING_ADDRESS.toLowerCase() ? "是" : "否");
+      }
+      if (blockscoutApi) {
+        const v = await checkContractVerified(blockscoutApi, COMMENTS_ADDRESS);
+        console.log("区块浏览器验证:", v.verified ? "是" : "否", v.error ? `(${v.error})` : "");
       }
     }
   } else {
