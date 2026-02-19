@@ -1,0 +1,18 @@
+
+{
+  "chainId": "1439",
+  "factory": "0xbd5b0e44acaf0b42a47269ecae049482acdf674c",
+  "reviewStaking": "0x44b04959e2096dea5b3e9e3ba33e9d08c4de1809",
+  "comments": "0x60cd687760138c011b73dcfb5e20f6de44e3a500",
+  "deployedAt": "2026-02-18T11:26:56.804Z",
+  "constructorArgs": {
+    "reviewStaking": [
+      "0xa06cA9DD918491441B32Eb4eA2C8B984B31163DA",
+      "500000000000000000"
+    ],
+    "comments": [
+      "0xbd5b0e44acaf0b42a47269ecae049482acdf674c",
+      "0x44b04959e2096dea5b3e9e3ba33e9d08c4de1809"
+    ]
+  }
+}
