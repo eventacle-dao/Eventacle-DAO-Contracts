@@ -74,6 +74,62 @@ contract ActivityFactoryTest is Test {
         assertEq(factory.getActivityCreatedAt("activity-1"), 1000);
     }
 
+    function test_GetActivityInfo_ReturnsCorrectValues() public {
+        user1 = makeAddr("user1");
+        vm.warp(12345);
+        vm.prank(user1);
+        (string memory activityId, address poapAddress) = factory.createActivity(
+            "Hackathon 2026",
+            "H26",
+            "https://ipfs.io/ipfs/QmMeta456"
+        );
+        (
+            address creator,
+            uint256 createdAt,
+            address poapFromInfo,
+            string memory metadataURI
+        ) = factory.getActivityInfo(activityId);
+        assertEq(creator, user1);
+        assertEq(createdAt, 12345);
+        assertEq(poapFromInfo, poapAddress);
+        assertEq(metadataURI, "https://ipfs.io/ipfs/QmMeta456");
+    }
+
+    function test_GetActivityInfo_NonExistentActivity_ReturnsZerosAndEmpty() public view {
+        (
+            address creator,
+            uint256 createdAt,
+            address poapAddress,
+            string memory metadataURI
+        ) = factory.getActivityInfo("activity-999");
+        assertEq(creator, address(0));
+        assertEq(createdAt, 0);
+        assertEq(poapAddress, address(0));
+        assertEq(metadataURI, "");
+    }
+
+    function test_GetActivityInfo_MultipleActivities() public {
+        address alice = makeAddr("alice");
+        address bob = makeAddr("bob");
+        vm.warp(100);
+        vm.prank(alice);
+        (, address poap1) = factory.createActivity("A", "A", "ipfs://QmA");
+        vm.warp(200);
+        vm.prank(bob);
+        (, address poap2) = factory.createActivity("B", "B", "ipfs://QmB");
+
+        (address c1,, address p1, string memory u1) = factory.getActivityInfo("activity-1");
+        assertEq(c1, alice);
+        assertEq(p1, poap1);
+        assertEq(u1, "ipfs://QmA");
+
+        (address c2, uint256 t2, address p2, string memory u2) = factory.getActivityInfo("activity-2");
+        assertEq(c2, bob);
+        assertEq(t2, 200);
+        assertEq(p2, poap2);
+        assertEq(u2, "ipfs://QmB");
+    }
+
     function test_RenounceOwnership() public {
         vm.prank(deployer);
         factory.renounceOwnership();

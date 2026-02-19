@@ -20,6 +20,9 @@ contract ActivityFactory is Ownable {
     
     // 活动ID => 对应的 POAP 合约地址
     mapping(string => address) public getPOAPContract;
+
+    // 活动ID => 对应的 POAP 合约的元数据 URI
+    mapping(string => string) public getPOAPMetadataURI;
     
     // 活动ID => 创建者地址
     mapping(string => address) public getActivityCreator;
@@ -66,9 +69,10 @@ contract ActivityFactory is Ownable {
         // 记录映射与创建时间
         activityIds.push(activityId);
         getPOAPContract[activityId] = poapAddress;
+        getPOAPMetadataURI[activityId] = metadataURI;
         getActivityCreator[activityId] = msg.sender;
         getActivityCreatedAt[activityId] = createdAt;
-        
+
         emit ActivityCreated(activityId, msg.sender, metadataURI, poapAddress, name, symbol, createdAt);
     }
     
@@ -79,6 +83,13 @@ contract ActivityFactory is Ownable {
         return activityIds;
     }
     
+    function getActivityInfo(string memory activityId) external view returns (address creator, uint256 createdAt, address poapAddress, string memory metadataURI) {
+        creator = getActivityCreator[activityId];
+        createdAt = getActivityCreatedAt[activityId];
+        poapAddress = getPOAPContract[activityId];
+        metadataURI = getPOAPMetadataURI[activityId];
+    }
+
     /**
      * @dev 放弃所有权，使工厂彻底去中心化。
      *      此函数必须在部署后由部署者立即调用。

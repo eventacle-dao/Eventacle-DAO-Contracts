@@ -36,6 +36,9 @@ contract ActivityComments {
         string contentURI;
         string reviewURI;
         bool isVisible;
+        bool inQuestion;
+        address reviewer;
+        uint256 reviewTimestamp;
         uint256 timestamp;
         CommentType commentType;
         uint256 replyToIndex;  // 回复时指向被回复评论的下标；普通评论为 NO_PARENT
@@ -56,6 +59,8 @@ contract ActivityComments {
     );
 
     event CommentVisibilitySet(string indexed activityId, uint256 indexed commentIndex, bool visible, address setBy);
+    event CommentInQuestionSet(string indexed activityId, uint256 indexed commentIndex, bool inQuestion, address setBy);
+    event CommentReviewed(string indexed activityId, uint256 indexed commentIndex, string reviewURI, uint256 timestamp, address reviewer);
 
     error ActivityNotFound(string activityId);
     error InvalidReplyToIndex(uint256 replyToIndex, uint256 currentLength);
@@ -63,6 +68,8 @@ contract ActivityComments {
     error NoReviewGate();
     error NotReviewer();
     error CommentIndexOutOfRange();
+    error CommentAlreadyReviewed();
+    error CannotSetInQuestionSelf();
 
     function _emitCommentPosted(
         string calldata activityId,
@@ -101,6 +108,9 @@ contract ActivityComments {
                 contentURI: contentURI,
                 reviewURI: "",
                 isVisible: false,
+                inQuestion: false,
+                reviewer: address(0),
+                reviewTimestamp: 0,
                 timestamp: block.timestamp,
                 commentType: CommentType.NORMAL,
                 replyToIndex: NO_PARENT
@@ -131,6 +141,9 @@ contract ActivityComments {
                 contentURI: contentURI,
                 reviewURI: reviewURI,
                 isVisible: false,
+                inQuestion: false,
+                reviewer: address(0),
+                reviewTimestamp: 0,
                 timestamp: block.timestamp,
                 commentType: CommentType.REPLY,
                 replyToIndex: replyToIndex
@@ -157,6 +170,28 @@ contract ActivityComments {
         }
         list[commentIndex].isVisible = visible;
         emit CommentVisibilitySet(activityId, commentIndex, visible, msg.sender);
+    }
+
+    /**
+     * @dev 将某条评论标记为「存在疑问」或取消该标记，用于搁置待处理。仅具备 review 权限者可调用。
+     */
+    function setCommentInQuestion(string calldata activityId, uint256 commentIndex, bool inQuestion) external {
+        if (reviewGate == address(0)) {
+            revert NoReviewGate();
+        }
+        if (!IReviewGate(reviewGate).hasReviewPermission(msg.sender)) {
+            revert NotReviewer();
+        }
+        bytes32 key = keccak256(abi.encodePacked(activityId));
+        Comment[] storage list = _commentsByActivity[key];
+        if (commentIndex >= list.length) {
+            revert CommentIndexOutOfRange();
+        }
+        if (msg.sender == list[commentIndex].reviewer) {
+            revert CannotSetInQuestionSelf();
+        }
+        list[commentIndex].inQuestion = inQuestion;
+        emit CommentInQuestionSet(activityId, commentIndex, inQuestion, msg.sender);
     }
 
     /**
@@ -189,6 +224,7 @@ contract ActivityComments {
             string memory contentURI,
             string memory reviewURI,
             bool isVisible,
+            bool inQuestion,
             uint256 timestamp,
             uint256 replyToIndex
         )
@@ -196,6 +232,28 @@ contract ActivityComments {
         Comment[] storage list = _commentsByActivity[keccak256(abi.encodePacked(activityId))];
         require(index < list.length, "Comment index out of range");
         Comment storage c = list[index];
-        return (c.commenter, c.contentURI, c.reviewURI, c.isVisible, c.timestamp, c.replyToIndex);
+        return (c.commenter, c.contentURI, c.reviewURI, c.isVisible, c.inQuestion, c.timestamp, c.replyToIndex);
+    }
+
+    function reviewComment(string calldata activityId, uint256 commentIndex, string calldata reviewURI, bool isVisible) external {
+        if (reviewGate == address(0)) {
+            revert NoReviewGate();
+        }
+        if (!IReviewGate(reviewGate).hasReviewPermission(msg.sender)) {
+            revert NotReviewer();
+        }
+        bytes32 key = keccak256(abi.encodePacked(activityId));
+        Comment[] storage list = _commentsByActivity[key];
+        if (commentIndex >= list.length) {
+            revert CommentIndexOutOfRange();
+        }
+        if (list[commentIndex].reviewer != address(0)) {
+            revert CommentAlreadyReviewed();
+        }
+        list[commentIndex].reviewURI = reviewURI;
+        list[commentIndex].isVisible = isVisible;
+        list[commentIndex].reviewer = msg.sender;
+        list[commentIndex].reviewTimestamp = block.timestamp;
+        emit CommentReviewed(activityId, commentIndex, reviewURI, block.timestamp, msg.sender);
     }
 }
