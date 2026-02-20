@@ -35,6 +35,7 @@ contract ActivityFactoryTest is Test {
         assertGt(factory.getActivityCreatedAt("activity-1"), 0);
         assertEq(factory.activityIds(0), "activity-1");
         assertEq(factory.getAllActivityIds().length, 1);
+        assertEq(factory.getActivityMetadataURI("activity-1"), "https://ipfs.io/ipfs/QmHash123");
 
         ActivityPOAP poap = ActivityPOAP(poapAddress);
         assertEq(poap.creator(), user1);
@@ -87,12 +88,12 @@ contract ActivityFactoryTest is Test {
             address creator,
             uint256 createdAt,
             address poapFromInfo,
-            string memory metadataURI
+            string memory activityMetadataURI
         ) = factory.getActivityInfo(activityId);
         assertEq(creator, user1);
         assertEq(createdAt, 12345);
         assertEq(poapFromInfo, poapAddress);
-        assertEq(metadataURI, "https://ipfs.io/ipfs/QmMeta456");
+        assertEq(activityMetadataURI, "https://ipfs.io/ipfs/QmMeta456");
     }
 
     function test_GetActivityInfo_NonExistentActivity_ReturnsZerosAndEmpty() public view {
@@ -100,12 +101,12 @@ contract ActivityFactoryTest is Test {
             address creator,
             uint256 createdAt,
             address poapAddress,
-            string memory metadataURI
+            string memory activityMetadataURI
         ) = factory.getActivityInfo("activity-999");
         assertEq(creator, address(0));
         assertEq(createdAt, 0);
         assertEq(poapAddress, address(0));
-        assertEq(metadataURI, "");
+        assertEq(activityMetadataURI, "");
     }
 
     function test_GetActivityInfo_MultipleActivities() public {

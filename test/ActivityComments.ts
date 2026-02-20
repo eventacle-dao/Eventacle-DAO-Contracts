@@ -84,7 +84,7 @@ describe("ActivityComments", async function () {
     const poapAsAlice = await viem.getContractAt("ActivityPOAP", poapAddress, {
       client: { wallet: alice },
     });
-    await poapAsAlice.write.mint([deployer.account!.address]);
+    await poapAsAlice.write.mint([deployer.account!.address, "ipfs://bafkreifgr3fkhfzihay7tia2wi4cwzdixg6p7gokknnym6brgc6xmzc5ye"]);
     const comments = await viem.deployContract("ActivityComments", [factory.address, ZERO]);
     assert.equal(await comments.read.getCommentCount(["activity-1"]), 0n);
 
@@ -120,7 +120,7 @@ describe("ActivityComments", async function () {
     const poapAsAlice = await viem.getContractAt("ActivityPOAP", poapAddress, {
       client: { wallet: alice },
     });
-    await poapAsAlice.write.mint([deployer.account!.address]);
+    await poapAsAlice.write.mint([deployer.account!.address, "ipfs://bafkreifgr3fkhfzihay7tia2wi4cwzdixg6p7gokknnym6brgc6xmzc5ye"]);
     const comments = await viem.deployContract("ActivityComments", [factory.address, ZERO]);
     await comments.write.postComment(["activity-1", "ipfs://QmOne"]);
     const [commenter, contentURI, reviewURI, isVisible, inQuestion, timestamp, replyToIndex] =
@@ -145,9 +145,9 @@ describe("ActivityComments", async function () {
     const poapAsAlice = await viem.getContractAt("ActivityPOAP", poapAddress, {
       client: { wallet: alice },
     });
-    await poapAsAlice.write.mint([deployer.account!.address]);
-    await poapAsAlice.write.mint([alice.account!.address]);
-    await poapAsAlice.write.mint([bob.account!.address]);
+    await poapAsAlice.write.mint([deployer.account!.address, "ipfs://bafkreifgr3fkhfzihay7tia2wi4cwzdixg6p7gokknnym6brgc6xmzc5ye"]);
+    await poapAsAlice.write.mint([alice.account!.address, "ipfs://bafkreifgr3fkhfzihay7tia2wi4cwzdixg6p7gokknnym6brgc6xmzc5ye"]);
+    await poapAsAlice.write.mint([bob.account!.address, "ipfs://bafkreifgr3fkhfzihay7tia2wi4cwzdixg6p7gokknnym6brgc6xmzc5ye"]);
     const comments = await viem.deployContract("ActivityComments", [factory.address, ZERO]);
     const commentsAsAlice = await viem.getContractAt("ActivityComments", comments.address, {
       client: { wallet: alice },
@@ -176,8 +176,8 @@ describe("ActivityComments", async function () {
     const poapAsAlice = await viem.getContractAt("ActivityPOAP", poapAddress, {
       client: { wallet: alice },
     });
-    await poapAsAlice.write.mint([deployer.account!.address]);
-    await poapAsAlice.write.mint([bob.account!.address]);
+    await poapAsAlice.write.mint([deployer.account!.address, "ipfs://bafkreifgr3fkhfzihay7tia2wi4cwzdixg6p7gokknnym6brgc6xmzc5ye"]);
+    await poapAsAlice.write.mint([bob.account!.address, "ipfs://bafkreifgr3fkhfzihay7tia2wi4cwzdixg6p7gokknnym6brgc6xmzc5ye"]);
     const comments = await viem.deployContract("ActivityComments", [factory.address, ZERO]);
     await comments.write.postComment(["activity-1", "ipfs://root"]);
     const commentsAsBob = await viem.getContractAt("ActivityComments", comments.address, {
@@ -225,7 +225,7 @@ describe("ActivityComments", async function () {
     const poapAsAlice = await viem.getContractAt("ActivityPOAP", poapAddress, {
       client: { wallet: alice },
     });
-    await poapAsAlice.write.mint([alice.account!.address]);
+    await poapAsAlice.write.mint([alice.account!.address, "ipfs://bafkreifgr3fkhfzihay7tia2wi4cwzdixg6p7gokknnym6brgc6xmzc5ye"]);
     const comments = await viem.deployContract("ActivityComments", [factory.address, ZERO]);
     const commentsAsAlice = await viem.getContractAt("ActivityComments", comments.address, {
       client: { wallet: alice },
@@ -248,7 +248,7 @@ describe("ActivityComments", async function () {
     const poapAsAlice = await viem.getContractAt("ActivityPOAP", poapAddress, {
       client: { wallet: alice },
     });
-    await poapAsAlice.write.mint([alice.account!.address]);
+    await poapAsAlice.write.mint([alice.account!.address, "ipfs://bafkreifgr3fkhfzihay7tia2wi4cwzdixg6p7gokknnym6brgc6xmzc5ye"]);
     const comments = await viem.deployContract("ActivityComments", [factory.address, ZERO]);
     const commentsAsAlice = await viem.getContractAt("ActivityComments", comments.address, {
       client: { wallet: alice },
@@ -276,7 +276,7 @@ describe("ActivityComments", async function () {
     const poapAsAlice = await viem.getContractAt("ActivityPOAP", poapAddress, {
       client: { wallet: alice },
     });
-    await poapAsAlice.write.mint([alice.account!.address]);
+    await poapAsAlice.write.mint([alice.account!.address, "ipfs://bafkreifgr3fkhfzihay7tia2wi4cwzdixg6p7gokknnym6brgc6xmzc5ye"]);
     const comments = await viem.deployContract("ActivityComments", [factory.address, staking.address]);
     const commentsAsAlice = await viem.getContractAt("ActivityComments", comments.address, {
       client: { wallet: alice },
@@ -313,7 +313,7 @@ describe("ActivityComments", async function () {
     const poapAsAlice = await viem.getContractAt("ActivityPOAP", poapAddress, {
       client: { wallet: alice },
     });
-    await poapAsAlice.write.mint([alice.account!.address]);
+    await poapAsAlice.write.mint([alice.account!.address, "ipfs://bafkreifgr3fkhfzihay7tia2wi4cwzdixg6p7gokknnym6brgc6xmzc5ye"]);
     const comments = await viem.deployContract("ActivityComments", [factory.address, staking.address]);
     const commentsAsAlice = await viem.getContractAt("ActivityComments", comments.address, {
       client: { wallet: alice },
@@ -341,7 +341,7 @@ describe("ActivityComments", async function () {
     const poapAsAlice = await viem.getContractAt("ActivityPOAP", poapAddress, {
       client: { wallet: alice },
     });
-    await poapAsAlice.write.mint([alice.account!.address]);
+    await poapAsAlice.write.mint([alice.account!.address, "ipfs://bafkreifgr3fkhfzihay7tia2wi4cwzdixg6p7gokknnym6brgc6xmzc5ye"]);
     const comments = await viem.deployContract("ActivityComments", [factory.address, staking.address]);
     const commentsAsAlice = await viem.getContractAt("ActivityComments", comments.address, {
       client: { wallet: alice },
@@ -368,7 +368,7 @@ describe("ActivityComments", async function () {
     const poapAsAlice = await viem.getContractAt("ActivityPOAP", poapAddress, {
       client: { wallet: alice },
     });
-    await poapAsAlice.write.mint([alice.account!.address]);
+    await poapAsAlice.write.mint([alice.account!.address, "ipfs://bafkreifgr3fkhfzihay7tia2wi4cwzdixg6p7gokknnym6brgc6xmzc5ye"]);
     const comments = await viem.deployContract("ActivityComments", [factory.address, ZERO]);
     const commentsAsAlice = await viem.getContractAt("ActivityComments", comments.address, {
       client: { wallet: alice },
@@ -396,7 +396,7 @@ describe("ActivityComments", async function () {
     const poapAsAlice = await viem.getContractAt("ActivityPOAP", poapAddress, {
       client: { wallet: alice },
     });
-    await poapAsAlice.write.mint([alice.account!.address]);
+    await poapAsAlice.write.mint([alice.account!.address, "ipfs://bafkreifgr3fkhfzihay7tia2wi4cwzdixg6p7gokknnym6brgc6xmzc5ye"]);
     const comments = await viem.deployContract("ActivityComments", [factory.address, staking.address]);
     const commentsAsAlice = await viem.getContractAt("ActivityComments", comments.address, {
       client: { wallet: alice },
@@ -424,7 +424,7 @@ describe("ActivityComments", async function () {
     const poapAsAlice = await viem.getContractAt("ActivityPOAP", poapAddress, {
       client: { wallet: alice },
     });
-    await poapAsAlice.write.mint([alice.account!.address]);
+    await poapAsAlice.write.mint([alice.account!.address, "ipfs://bafkreifgr3fkhfzihay7tia2wi4cwzdixg6p7gokknnym6brgc6xmzc5ye"]);
     const comments = await viem.deployContract("ActivityComments", [factory.address, staking.address]);
     const commentsAsAlice = await viem.getContractAt("ActivityComments", comments.address, {
       client: { wallet: alice },
@@ -456,7 +456,7 @@ describe("ActivityComments", async function () {
     const poapAsAlice = await viem.getContractAt("ActivityPOAP", poapAddress, {
       client: { wallet: alice },
     });
-    await poapAsAlice.write.mint([alice.account!.address]);
+    await poapAsAlice.write.mint([alice.account!.address, "ipfs://bafkreifgr3fkhfzihay7tia2wi4cwzdixg6p7gokknnym6brgc6xmzc5ye"]);
     const comments = await viem.deployContract("ActivityComments", [factory.address, staking.address]);
     const commentsAsAlice = await viem.getContractAt("ActivityComments", comments.address, {
       client: { wallet: alice },
@@ -489,8 +489,8 @@ describe("ActivityComments", async function () {
     const poapAsAlice = await viem.getContractAt("ActivityPOAP", poapAddress, {
       client: { wallet: alice },
     });
-    await poapAsAlice.write.mint([alice.account!.address]);
-    await poapAsAlice.write.mint([bob.account!.address]);
+    await poapAsAlice.write.mint([alice.account!.address, "ipfs://bafkreifgr3fkhfzihay7tia2wi4cwzdixg6p7gokknnym6brgc6xmzc5ye"]);
+    await poapAsAlice.write.mint([bob.account!.address, "ipfs://bafkreifgr3fkhfzihay7tia2wi4cwzdixg6p7gokknnym6brgc6xmzc5ye"]);
     const comments = await viem.deployContract("ActivityComments", [factory.address, staking.address]);
     const commentsAsAlice = await viem.getContractAt("ActivityComments", comments.address, {
       client: { wallet: alice },
@@ -528,7 +528,7 @@ describe("ActivityComments", async function () {
     const poapAsAlice = await viem.getContractAt("ActivityPOAP", poapAddress, {
       client: { wallet: alice },
     });
-    await poapAsAlice.write.mint([alice.account!.address]);
+    await poapAsAlice.write.mint([alice.account!.address, "ipfs://bafkreifgr3fkhfzihay7tia2wi4cwzdixg6p7gokknnym6brgc6xmzc5ye"]);
     const comments = await viem.deployContract("ActivityComments", [factory.address, staking.address]);
     const commentsAsAlice = await viem.getContractAt("ActivityComments", comments.address, {
       client: { wallet: alice },
@@ -559,7 +559,7 @@ describe("ActivityComments", async function () {
     const poapAsAlice = await viem.getContractAt("ActivityPOAP", poapAddress, {
       client: { wallet: alice },
     });
-    await poapAsAlice.write.mint([alice.account!.address]);
+    await poapAsAlice.write.mint([alice.account!.address, "ipfs://bafkreifgr3fkhfzihay7tia2wi4cwzdixg6p7gokknnym6brgc6xmzc5ye"]);
     const comments = await viem.deployContract("ActivityComments", [factory.address, ZERO]);
     const commentsAsAlice = await viem.getContractAt("ActivityComments", comments.address, {
       client: { wallet: alice },
@@ -587,7 +587,7 @@ describe("ActivityComments", async function () {
     const poapAsAlice = await viem.getContractAt("ActivityPOAP", poapAddress, {
       client: { wallet: alice },
     });
-    await poapAsAlice.write.mint([alice.account!.address]);
+    await poapAsAlice.write.mint([alice.account!.address, "ipfs://bafkreifgr3fkhfzihay7tia2wi4cwzdixg6p7gokknnym6brgc6xmzc5ye"]);
     const comments = await viem.deployContract("ActivityComments", [factory.address, staking.address]);
     const commentsAsAlice = await viem.getContractAt("ActivityComments", comments.address, {
       client: { wallet: alice },
@@ -615,7 +615,7 @@ describe("ActivityComments", async function () {
     const poapAsAlice = await viem.getContractAt("ActivityPOAP", poapAddress, {
       client: { wallet: alice },
     });
-    await poapAsAlice.write.mint([alice.account!.address]);
+    await poapAsAlice.write.mint([alice.account!.address, "ipfs://bafkreifgr3fkhfzihay7tia2wi4cwzdixg6p7gokknnym6brgc6xmzc5ye"]);
     const comments = await viem.deployContract("ActivityComments", [factory.address, staking.address]);
     const commentsAsAlice = await viem.getContractAt("ActivityComments", comments.address, {
       client: { wallet: alice },
@@ -647,7 +647,7 @@ describe("ActivityComments", async function () {
     const poapAsAlice = await viem.getContractAt("ActivityPOAP", poapAddress, {
       client: { wallet: alice },
     });
-    await poapAsAlice.write.mint([alice.account!.address]);
+    await poapAsAlice.write.mint([alice.account!.address, "ipfs://bafkreifgr3fkhfzihay7tia2wi4cwzdixg6p7gokknnym6brgc6xmzc5ye"]);
     const comments = await viem.deployContract("ActivityComments", [factory.address, staking.address]);
     const commentsAsAlice = await viem.getContractAt("ActivityComments", comments.address, {
       client: { wallet: alice },
@@ -696,7 +696,7 @@ describe("ActivityComments", async function () {
     const poapAsAlice = await viem.getContractAt("ActivityPOAP", poapAddress, {
       client: { wallet: alice },
     });
-    await poapAsAlice.write.mint([alice.account!.address]);
+    await poapAsAlice.write.mint([alice.account!.address, "ipfs://bafkreifgr3fkhfzihay7tia2wi4cwzdixg6p7gokknnym6brgc6xmzc5ye"]);
     const comments = await viem.deployContract("ActivityComments", [factory.address, staking.address]);
     const commentsAsAlice = await viem.getContractAt("ActivityComments", comments.address, {
       client: { wallet: alice },
@@ -724,8 +724,8 @@ describe("ActivityComments", async function () {
     const poapAsAlice = await viem.getContractAt("ActivityPOAP", poapAddress, {
       client: { wallet: alice },
     });
-    await poapAsAlice.write.mint([deployer.account!.address]);
-    await poapAsAlice.write.mint([bob.account!.address]);
+    await poapAsAlice.write.mint([deployer.account!.address, "ipfs://bafkreifgr3fkhfzihay7tia2wi4cwzdixg6p7gokknnym6brgc6xmzc5ye"]);
+    await poapAsAlice.write.mint([bob.account!.address, "ipfs://bafkreifgr3fkhfzihay7tia2wi4cwzdixg6p7gokknnym6brgc6xmzc5ye"]);
     const comments = await viem.deployContract("ActivityComments", [factory.address, ZERO]);
     await comments.write.postComment(["activity-1", "ipfs://root"]);
     const commentsAsBob = await viem.getContractAt("ActivityComments", comments.address, {

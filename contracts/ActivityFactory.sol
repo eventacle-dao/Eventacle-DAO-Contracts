@@ -21,8 +21,8 @@ contract ActivityFactory is Ownable {
     // 活动ID => 对应的 POAP 合约地址
     mapping(string => address) public getPOAPContract;
 
-    // 活动ID => 对应的 POAP 合约的元数据 URI
-    mapping(string => string) public getPOAPMetadataURI;
+    // 活动ID => 活动元数据 URI（活动名称、时间、地点等描述信息）
+    mapping(string => string) public getActivityMetadataURI;
     
     // 活动ID => 创建者地址
     mapping(string => address) public getActivityCreator;
@@ -33,7 +33,7 @@ contract ActivityFactory is Ownable {
     event ActivityCreated(
         string indexed activityId,
         address indexed creator,
-        string metadataURI,
+        string activityMetadataURI,
         address poapContract,
         string name,
         string symbol,
@@ -46,34 +46,33 @@ contract ActivityFactory is Ownable {
     
     /**
      * @dev 创建新活动，activityId 自动生成为 "activity-1"、"activity-2" ...
+     *      POAP 的徽章元数据在 mint 时由 minter 传入并绑定。
      * @param name POAP 的名称（例如 "Hackathon 2026 Attendance"）
      * @param symbol POAP 的符号（例如 "H26"）
-     * @param metadataURI IPFS 或 Arweave 的 URI，用于存储活动的元数据（例如活动名称、时间、地点等）
+     * @param activityMetadataURI 活动元数据 URI（活动描述：名称、时间、地点等）
      * @return activityId 自动生成的活动 ID
      * @return poapAddress 新部署的 POAP 合约地址
      */
     function createActivity(
         string memory name,
         string memory symbol,
-        string memory metadataURI
+        string memory activityMetadataURI
     ) external returns (string memory activityId, address poapAddress) {
         _activityCounter++;
         activityId = string.concat("activity-", Strings.toString(_activityCounter));
         
-        // 部署新的 POAP 合约，并将创建者（msg.sender）作为 creator 传入
         ActivityPOAP poap = new ActivityPOAP(name, symbol, msg.sender);
         poapAddress = address(poap);
         
         uint256 createdAt = block.timestamp;
         
-        // 记录映射与创建时间
         activityIds.push(activityId);
         getPOAPContract[activityId] = poapAddress;
-        getPOAPMetadataURI[activityId] = metadataURI;
+        getActivityMetadataURI[activityId] = activityMetadataURI;
         getActivityCreator[activityId] = msg.sender;
         getActivityCreatedAt[activityId] = createdAt;
 
-        emit ActivityCreated(activityId, msg.sender, metadataURI, poapAddress, name, symbol, createdAt);
+        emit ActivityCreated(activityId, msg.sender, activityMetadataURI, poapAddress, name, symbol, createdAt);
     }
     
     /**
@@ -83,11 +82,16 @@ contract ActivityFactory is Ownable {
         return activityIds;
     }
     
-    function getActivityInfo(string memory activityId) external view returns (address creator, uint256 createdAt, address poapAddress, string memory metadataURI) {
+    function getActivityInfo(string memory activityId) external view returns (
+        address creator,
+        uint256 createdAt,
+        address poapAddress,
+        string memory activityMetadataURI
+    ) {
         creator = getActivityCreator[activityId];
         createdAt = getActivityCreatedAt[activityId];
         poapAddress = getPOAPContract[activityId];
-        metadataURI = getPOAPMetadataURI[activityId];
+        activityMetadataURI = getActivityMetadataURI[activityId];
     }
 
     /**

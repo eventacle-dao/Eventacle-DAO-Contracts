@@ -27,9 +27,9 @@ contract ActivityCommentsTest is Test {
         comments = new ActivityComments(address(factory), address(0));
         poap = ActivityPOAP(factory.getPOAPContract(ACTIVITY_ID));
         vm.prank(user1);
-        poap.mint(user1);
+        poap.mint(user1, "ipfs://bafkreifgr3fkhfzihay7tia2wi4cwzdixg6p7gokknnym6brgc6xmzc5ye");
         vm.prank(user1);
-        poap.mint(user2);
+        poap.mint(user2, "ipfs://bafkreifgr3fkhfzihay7tia2wi4cwzdixg6p7gokknnym6brgc6xmzc5ye");
     }
 
     function test_Constructor() public view {

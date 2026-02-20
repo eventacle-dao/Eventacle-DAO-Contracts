@@ -14,7 +14,7 @@
  *   create       创建活动。ACTIVITY_NAME, ACTIVITY_SYMBOL [, ACTIVITY_METADATA_URI]
  *   list         列出所有活动
  *   info         活动详情。ACTIVITY_ID
- *   mint         铸造 POAP。ACTIVITY_ID, ACTIVITY_TO
+ *   mint         铸造 POAP（铸造时绑定该 token 的元数据 URI）。ACTIVITY_ID, ACTIVITY_TO [, ACTIVITY_POAP_METADATA_URI]，未设则用默认 IPFS 元数据
  *   addMinter    添加铸造者。ACTIVITY_ID, ACTIVITY_MINTER
  *   removeMinter 移除铸造者。ACTIVITY_ID, ACTIVITY_MINTER
  *   comment      发评论（需持 POAP）。ACTIVITY_ID, ACTIVITY_CONTENT_URI
@@ -25,7 +25,7 @@
  *   ACTIVITY_CMD=create ACTIVITY_NAME="Hackathon 2026" ACTIVITY_SYMBOL="H26" ACTIVITY_METADATA_URI="ipfs://..." bunx hardhat run scripts/call-contracts.js 
  *   ACTIVITY_CMD=list bunx hardhat run scripts/call-contracts.js
  *   ACTIVITY_CMD=info ACTIVITY_ID=activity-1 bunx hardhat run scripts/call-contracts.js
- *   ACTIVITY_CMD=mint ACTIVITY_ID=activity-1 ACTIVITY_TO=0x... bunx hardhat run scripts/call-contracts.js
+ *   ACTIVITY_CMD=mint ACTIVITY_ID=activity-1 ACTIVITY_TO=0x... [ACTIVITY_POAP_METADATA_URI=ipfs://...] bunx hardhat run scripts/call-contracts.js
  *   ACTIVITY_CMD=comment ACTIVITY_ID=activity-1 ACTIVITY_CONTENT_URI=ipfs://Qm... bunx hardhat run scripts/call-contracts.js
  *   ACTIVITY_CMD=reply ACTIVITY_ID=activity-1 ACTIVITY_REPLY_TO_INDEX=0 ACTIVITY_CONTENT_URI=ipfs://Qm... bunx hardhat run scripts/call-contracts.js
  *   ACTIVITY_CMD=comments-list ACTIVITY_ID=activity-1 bunx hardhat run scripts/call-contracts.js
@@ -80,6 +80,9 @@ const COMMENTS_ADDRESS = process.env.ACTIVITY_COMMENTS_ADDRESS || deployment?.co
 
 const DEFAULT_GAS_PRICE = 160_000_000n;
 const GAS_BUFFER_PERCENT = 130n; // 估算值的 130%
+
+/** 默认 POAP 元数据 URI（未设置 ACTIVITY_POAP_METADATA_URI 时 mint 使用） */
+const DEFAULT_POAP_METADATA_URI = "ipfs://bafkreifgr3fkhfzihay7tia2wi4cwzdixg6p7gokknnym6brgc6xmzc5ye";
 
 /** 为写操作生成 tx 参数：优先用环境变量 ACTIVITY_GAS_LIMIT / ACTIVITY_GAS_PRICE，否则自动估算 gas 并加缓冲 */
 async function getWriteTxOpts(publicClient, account, contract, functionName, args) {
@@ -250,18 +253,19 @@ async function main() {
         console.log("mint 需设置 ACTIVITY_ID, ACTIVITY_TO");
         return;
       }
+      const poapMetadataURI = process.env.ACTIVITY_POAP_METADATA_URI ?? DEFAULT_POAP_METADATA_URI;
       const poapAddress = await factory.read.getPOAPContract([activityId]);
       if (!poapAddress || poapAddress === "0x0000000000000000000000000000000000000000") {
         console.log("活动不存在:", activityId);
         return;
       }
       const poap = await viem.getContractAt("ActivityPOAP", poapAddress);
-      const mintOpts = await getWriteTxOpts(publicClient, account, poap, "mint", [toAddress]);
-      if (!(await askConfirm("即将为 " + activityId + " 铸造 POAP 至 " + toAddress, mintOpts))) {
+      const mintOpts = await getWriteTxOpts(publicClient, account, poap, "mint", [toAddress, poapMetadataURI]);
+      if (!(await askConfirm("即将为 " + activityId + " 铸造 POAP 至 " + toAddress + (poapMetadataURI ? " 并绑定元数据 " + poapMetadataURI : ""), mintOpts))) {
         console.log("已取消");
         return;
       }
-      const txHash = await poap.write.mint([toAddress], mintOpts);
+      const txHash = await poap.write.mint([toAddress, poapMetadataURI], mintOpts);
       await waitTxThenConfirm(publicClient, txHash, "铸造");
       let totalSupply;
       for (let i = 0; i < TX_CONFIRM_RETRIES; i++) {

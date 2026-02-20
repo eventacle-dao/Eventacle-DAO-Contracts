@@ -12,7 +12,7 @@ import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 contract ActivityPOAP is ERC721 {
     // 活动创建者地址（用于识别，但不具备特殊权限）
     address public immutable creator;
-    
+
     // 授权铸造的地址映射
     mapping(address => bool) public minters;
     
@@ -22,12 +22,15 @@ contract ActivityPOAP is ERC721 {
     // 记录每个 tokenId 对应的铸造时间
     mapping(uint256 => uint256) public mintedAt;
 
+    // 铸造时绑定的每个 token 的元数据 URI（徽章图像/展示用）
+    mapping(uint256 => string) private _tokenMetadataURI;
+
     // 每个持有地址对应的 tokenId（最多持有一个POAP，无则为0）
     mapping(address => uint256) private poapTokenOf;
 
     event MinterAdded(address indexed minter);
     event MinterRemoved(address indexed minter);
-    event TrustStampMinted(address indexed to, uint256 indexed tokenId);
+    event TrustStampMinted(address indexed to, uint256 indexed tokenId, string metadataURI);
 
     /**
      * @param name POAP 名称
@@ -76,18 +79,20 @@ contract ActivityPOAP is ERC721 {
     }
     
     /**
-     * @dev 铸造 TrustStamp 给指定地址。不可重复领取。
+     * @dev 铸造 TrustStamp 给指定地址，并在铸造时绑定该 token 的元数据 URI。不可重复领取。
      * @param to 接收者地址
+     * @param tokenMetadataURI 该 POAP token 的元数据 URI（徽章图像/展示用）
      * @return tokenId 铸造的 NFT ID
      */
-    function mint(address to) external onlyMinter returns (uint256) {
+    function mint(address to, string memory tokenMetadataURI) external onlyMinter returns (uint256) {
         require(balanceOf(to) == 0, "POAP already claimed by this address");
         _tokenIds++;
         uint256 newTokenId = _tokenIds;
         _safeMint(to, newTokenId);
         mintedAt[newTokenId] = block.timestamp;
+        _tokenMetadataURI[newTokenId] = tokenMetadataURI;
         poapTokenOf[to] = newTokenId;
-        emit TrustStampMinted(to, newTokenId);
+        emit TrustStampMinted(to, newTokenId, tokenMetadataURI);
         return newTokenId;
     }
 
@@ -104,6 +109,21 @@ contract ActivityPOAP is ERC721 {
      */
     function totalSupply() external view returns (uint256) {
         return _tokenIds;
+    }
+
+    /**
+     * @dev 集合级元数据 URI（无统一集合 URI 时返回空）
+     */
+    function contractURI() external pure returns (string memory) {
+        return "";
+    }
+
+    /**
+     * @dev 返回铸造时绑定的该 token 的元数据 URI
+     */
+    function tokenURI(uint256 tokenId) public view override returns (string memory) {
+        _requireOwned(tokenId);
+        return _tokenMetadataURI[tokenId];
     }
     
     /**
