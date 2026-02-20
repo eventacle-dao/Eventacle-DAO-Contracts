@@ -1,17 +1,17 @@
 {
   "chainId": "1439",
-  "factory": "0x87c78ae1b1ac74c4e4c00d5fc81bc3df3b5cef91",
-  "reviewStaking": "0x60d4b9c13c9a0dd88f06b5cf9dfc0ec86bd31763",
-  "comments": "0x137e4a25f933cddcf81f8a3c256473e1309d8127",
-  "deployedAt": "2026-02-20T06:56:58.851Z",
+  "factory": "0x4b0727ca3f79867935f89979683fd9c80477ed92",
+  "reviewStaking": "0x53238d21d875ef2d6355a6d2a060fd9b90e52df9",
+  "comments": "0x1bf9fc7661ad9cc685477bb3c17fb39a56e7e12a",
+  "deployedAt": "2026-02-20T16:59:00.031Z",
   "constructorArgs": {
     "reviewStaking": [
       "0xa06ca9dd918491441b32eb4ea2c8b984b31163da",
       "100000000000000000000"
     ],
     "comments": [
-      "0x87c78ae1b1ac74c4e4c00d5fc81bc3df3b5cef91",
-      "0x60d4b9c13c9a0dd88f06b5cf9dfc0ec86bd31763"
+      "0x4b0727ca3f79867935f89979683fd9c80477ed92",
+      "0x53238d21d875ef2d6355a6d2a060fd9b90e52df9"
     ]
   }
 }

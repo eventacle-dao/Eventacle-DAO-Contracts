@@ -25,7 +25,7 @@ describe("ActivityComments", async function () {
     const factoryAsAlice = await viem.getContractAt("ActivityFactory", factory.address, {
       client: { wallet: alice },
     });
-    await factoryAsAlice.write.createActivity(["A", "A", "https://x"]);
+    await factoryAsAlice.write.createActivity(["A", "A", "https://x", 0n, 2n ** 256n - 1n, 3]);
     const comments = await viem.deployContract("ActivityComments", [factory.address, ZERO]);
     assert.equal(await comments.read.getCommentCount(["activity-1"]), 0n);
     assert.equal(await comments.read.getCommentCount(["activity-999"]), 0n);
@@ -36,7 +36,7 @@ describe("ActivityComments", async function () {
     const factoryAsAlice = await viem.getContractAt("ActivityFactory", factory.address, {
       client: { wallet: alice },
     });
-    await factoryAsAlice.write.createActivity(["A", "A", "https://x"]);
+    await factoryAsAlice.write.createActivity(["A", "A", "https://x", 0n, 2n ** 256n - 1n, 3]);
     const comments = await viem.deployContract("ActivityComments", [factory.address, ZERO]);
     const list = await comments.read.getComments(["activity-1"]);
     assert.equal(list.length, 0);
@@ -61,6 +61,9 @@ describe("ActivityComments", async function () {
       "Test Activity",
       "TA",
       "https://ipfs.io/ipfs/QmHash",
+      0n,
+      2n ** 256n - 1n,
+      3,
     ]);
     const comments = await viem.deployContract("ActivityComments", [factory.address, ZERO]);
     await viem.assertions.revertWithCustomError(
@@ -79,6 +82,9 @@ describe("ActivityComments", async function () {
       "Test Activity",
       "TA",
       "https://ipfs.io/ipfs/QmHash",
+      0n,
+      2n ** 256n - 1n,
+      3,
     ]);
     const poapAddress = await factory.read.getPOAPContract(["activity-1"]);
     const poapAsAlice = await viem.getContractAt("ActivityPOAP", poapAddress, {
@@ -115,7 +121,7 @@ describe("ActivityComments", async function () {
     const factoryAsAlice = await viem.getContractAt("ActivityFactory", factory.address, {
       client: { wallet: alice },
     });
-    await factoryAsAlice.write.createActivity(["A", "A", "https://x"]);
+    await factoryAsAlice.write.createActivity(["A", "A", "https://x", 0n, 2n ** 256n - 1n, 3]);
     const poapAddress = await factory.read.getPOAPContract(["activity-1"]);
     const poapAsAlice = await viem.getContractAt("ActivityPOAP", poapAddress, {
       client: { wallet: alice },
@@ -140,7 +146,7 @@ describe("ActivityComments", async function () {
     const factoryAsAlice = await viem.getContractAt("ActivityFactory", factory.address, {
       client: { wallet: alice },
     });
-    await factoryAsAlice.write.createActivity(["A", "A", "https://x"]);
+    await factoryAsAlice.write.createActivity(["A", "A", "https://x", 0n, 2n ** 256n - 1n, 3]);
     const poapAddress = await factory.read.getPOAPContract(["activity-1"]);
     const poapAsAlice = await viem.getContractAt("ActivityPOAP", poapAddress, {
       client: { wallet: alice },
@@ -171,7 +177,7 @@ describe("ActivityComments", async function () {
     const factoryAsAlice = await viem.getContractAt("ActivityFactory", factory.address, {
       client: { wallet: alice },
     });
-    await factoryAsAlice.write.createActivity(["A", "A", "https://x"]);
+    await factoryAsAlice.write.createActivity(["A", "A", "https://x", 0n, 2n ** 256n - 1n, 3]);
     const poapAddress = await factory.read.getPOAPContract(["activity-1"]);
     const poapAsAlice = await viem.getContractAt("ActivityPOAP", poapAddress, {
       client: { wallet: alice },
@@ -197,7 +203,7 @@ describe("ActivityComments", async function () {
     const factoryAsAlice = await viem.getContractAt("ActivityFactory", factory.address, {
       client: { wallet: alice },
     });
-    await factoryAsAlice.write.createActivity(["A", "A", "https://x"]);
+    await factoryAsAlice.write.createActivity(["A", "A", "https://x", 0n, 2n ** 256n - 1n, 3]);
     const comments = await viem.deployContract("ActivityComments", [factory.address, ZERO]);
     await viem.assertions.revertWith(
       comments.read.getComment(["activity-1", 0n]),
@@ -220,7 +226,7 @@ describe("ActivityComments", async function () {
     const factoryAsAlice = await viem.getContractAt("ActivityFactory", factory.address, {
       client: { wallet: alice },
     });
-    await factoryAsAlice.write.createActivity(["A", "A", "https://x"]);
+    await factoryAsAlice.write.createActivity(["A", "A", "https://x", 0n, 2n ** 256n - 1n, 3]);
     const poapAddress = await factory.read.getPOAPContract(["activity-1"]);
     const poapAsAlice = await viem.getContractAt("ActivityPOAP", poapAddress, {
       client: { wallet: alice },
@@ -243,7 +249,7 @@ describe("ActivityComments", async function () {
     const factoryAsAlice = await viem.getContractAt("ActivityFactory", factory.address, {
       client: { wallet: alice },
     });
-    await factoryAsAlice.write.createActivity(["A", "A", "https://x"]);
+    await factoryAsAlice.write.createActivity(["A", "A", "https://x", 0n, 2n ** 256n - 1n, 3]);
     const poapAddress = await factory.read.getPOAPContract(["activity-1"]);
     const poapAsAlice = await viem.getContractAt("ActivityPOAP", poapAddress, {
       client: { wallet: alice },
@@ -271,7 +277,7 @@ describe("ActivityComments", async function () {
     const factoryAsAlice = await viem.getContractAt("ActivityFactory", factory.address, {
       client: { wallet: alice },
     });
-    await factoryAsAlice.write.createActivity(["A", "A", "https://x"]);
+    await factoryAsAlice.write.createActivity(["A", "A", "https://x", 0n, 2n ** 256n - 1n, 3]);
     const poapAddress = await factory.read.getPOAPContract(["activity-1"]);
     const poapAsAlice = await viem.getContractAt("ActivityPOAP", poapAddress, {
       client: { wallet: alice },
@@ -308,7 +314,7 @@ describe("ActivityComments", async function () {
     const factoryAsAlice = await viem.getContractAt("ActivityFactory", factory.address, {
       client: { wallet: alice },
     });
-    await factoryAsAlice.write.createActivity(["A", "A", "https://x"]);
+    await factoryAsAlice.write.createActivity(["A", "A", "https://x", 0n, 2n ** 256n - 1n, 3]);
     const poapAddress = await factory.read.getPOAPContract(["activity-1"]);
     const poapAsAlice = await viem.getContractAt("ActivityPOAP", poapAddress, {
       client: { wallet: alice },
@@ -336,7 +342,7 @@ describe("ActivityComments", async function () {
     const factoryAsAlice = await viem.getContractAt("ActivityFactory", factory.address, {
       client: { wallet: alice },
     });
-    await factoryAsAlice.write.createActivity(["A", "A", "https://x"]);
+    await factoryAsAlice.write.createActivity(["A", "A", "https://x", 0n, 2n ** 256n - 1n, 3]);
     const poapAddress = await factory.read.getPOAPContract(["activity-1"]);
     const poapAsAlice = await viem.getContractAt("ActivityPOAP", poapAddress, {
       client: { wallet: alice },
@@ -363,7 +369,7 @@ describe("ActivityComments", async function () {
     const factoryAsAlice = await viem.getContractAt("ActivityFactory", factory.address, {
       client: { wallet: alice },
     });
-    await factoryAsAlice.write.createActivity(["A", "A", "https://x"]);
+    await factoryAsAlice.write.createActivity(["A", "A", "https://x", 0n, 2n ** 256n - 1n, 3]);
     const poapAddress = await factory.read.getPOAPContract(["activity-1"]);
     const poapAsAlice = await viem.getContractAt("ActivityPOAP", poapAddress, {
       client: { wallet: alice },
@@ -391,7 +397,7 @@ describe("ActivityComments", async function () {
     const factoryAsAlice = await viem.getContractAt("ActivityFactory", factory.address, {
       client: { wallet: alice },
     });
-    await factoryAsAlice.write.createActivity(["A", "A", "https://x"]);
+    await factoryAsAlice.write.createActivity(["A", "A", "https://x", 0n, 2n ** 256n - 1n, 3]);
     const poapAddress = await factory.read.getPOAPContract(["activity-1"]);
     const poapAsAlice = await viem.getContractAt("ActivityPOAP", poapAddress, {
       client: { wallet: alice },
@@ -419,7 +425,7 @@ describe("ActivityComments", async function () {
     const factoryAsAlice = await viem.getContractAt("ActivityFactory", factory.address, {
       client: { wallet: alice },
     });
-    await factoryAsAlice.write.createActivity(["A", "A", "https://x"]);
+    await factoryAsAlice.write.createActivity(["A", "A", "https://x", 0n, 2n ** 256n - 1n, 3]);
     const poapAddress = await factory.read.getPOAPContract(["activity-1"]);
     const poapAsAlice = await viem.getContractAt("ActivityPOAP", poapAddress, {
       client: { wallet: alice },
@@ -451,7 +457,7 @@ describe("ActivityComments", async function () {
     const factoryAsAlice = await viem.getContractAt("ActivityFactory", factory.address, {
       client: { wallet: alice },
     });
-    await factoryAsAlice.write.createActivity(["A", "A", "https://x"]);
+    await factoryAsAlice.write.createActivity(["A", "A", "https://x", 0n, 2n ** 256n - 1n, 3]);
     const poapAddress = await factory.read.getPOAPContract(["activity-1"]);
     const poapAsAlice = await viem.getContractAt("ActivityPOAP", poapAddress, {
       client: { wallet: alice },
@@ -484,7 +490,7 @@ describe("ActivityComments", async function () {
     const factoryAsAlice = await viem.getContractAt("ActivityFactory", factory.address, {
       client: { wallet: alice },
     });
-    await factoryAsAlice.write.createActivity(["A", "A", "https://x"]);
+    await factoryAsAlice.write.createActivity(["A", "A", "https://x", 0n, 2n ** 256n - 1n, 3]);
     const poapAddress = await factory.read.getPOAPContract(["activity-1"]);
     const poapAsAlice = await viem.getContractAt("ActivityPOAP", poapAddress, {
       client: { wallet: alice },
@@ -523,7 +529,7 @@ describe("ActivityComments", async function () {
     const factoryAsAlice = await viem.getContractAt("ActivityFactory", factory.address, {
       client: { wallet: alice },
     });
-    await factoryAsAlice.write.createActivity(["A", "A", "https://x"]);
+    await factoryAsAlice.write.createActivity(["A", "A", "https://x", 0n, 2n ** 256n - 1n, 3]);
     const poapAddress = await factory.read.getPOAPContract(["activity-1"]);
     const poapAsAlice = await viem.getContractAt("ActivityPOAP", poapAddress, {
       client: { wallet: alice },
@@ -554,7 +560,7 @@ describe("ActivityComments", async function () {
     const factoryAsAlice = await viem.getContractAt("ActivityFactory", factory.address, {
       client: { wallet: alice },
     });
-    await factoryAsAlice.write.createActivity(["A", "A", "https://x"]);
+    await factoryAsAlice.write.createActivity(["A", "A", "https://x", 0n, 2n ** 256n - 1n, 3]);
     const poapAddress = await factory.read.getPOAPContract(["activity-1"]);
     const poapAsAlice = await viem.getContractAt("ActivityPOAP", poapAddress, {
       client: { wallet: alice },
@@ -582,7 +588,7 @@ describe("ActivityComments", async function () {
     const factoryAsAlice = await viem.getContractAt("ActivityFactory", factory.address, {
       client: { wallet: alice },
     });
-    await factoryAsAlice.write.createActivity(["A", "A", "https://x"]);
+    await factoryAsAlice.write.createActivity(["A", "A", "https://x", 0n, 2n ** 256n - 1n, 3]);
     const poapAddress = await factory.read.getPOAPContract(["activity-1"]);
     const poapAsAlice = await viem.getContractAt("ActivityPOAP", poapAddress, {
       client: { wallet: alice },
@@ -610,7 +616,7 @@ describe("ActivityComments", async function () {
     const factoryAsAlice = await viem.getContractAt("ActivityFactory", factory.address, {
       client: { wallet: alice },
     });
-    await factoryAsAlice.write.createActivity(["A", "A", "https://x"]);
+    await factoryAsAlice.write.createActivity(["A", "A", "https://x", 0n, 2n ** 256n - 1n, 3]);
     const poapAddress = await factory.read.getPOAPContract(["activity-1"]);
     const poapAsAlice = await viem.getContractAt("ActivityPOAP", poapAddress, {
       client: { wallet: alice },
@@ -642,7 +648,7 @@ describe("ActivityComments", async function () {
     const factoryAsAlice = await viem.getContractAt("ActivityFactory", factory.address, {
       client: { wallet: alice },
     });
-    await factoryAsAlice.write.createActivity(["A", "A", "https://x"]);
+    await factoryAsAlice.write.createActivity(["A", "A", "https://x", 0n, 2n ** 256n - 1n, 3]);
     const poapAddress = await factory.read.getPOAPContract(["activity-1"]);
     const poapAsAlice = await viem.getContractAt("ActivityPOAP", poapAddress, {
       client: { wallet: alice },
@@ -691,7 +697,7 @@ describe("ActivityComments", async function () {
     const factoryAsAlice = await viem.getContractAt("ActivityFactory", factory.address, {
       client: { wallet: alice },
     });
-    await factoryAsAlice.write.createActivity(["A", "A", "https://x"]);
+    await factoryAsAlice.write.createActivity(["A", "A", "https://x", 0n, 2n ** 256n - 1n, 3]);
     const poapAddress = await factory.read.getPOAPContract(["activity-1"]);
     const poapAsAlice = await viem.getContractAt("ActivityPOAP", poapAddress, {
       client: { wallet: alice },
@@ -719,7 +725,7 @@ describe("ActivityComments", async function () {
     const factoryAsAlice = await viem.getContractAt("ActivityFactory", factory.address, {
       client: { wallet: alice },
     });
-    await factoryAsAlice.write.createActivity(["A", "A", "https://x"]);
+    await factoryAsAlice.write.createActivity(["A", "A", "https://x", 0n, 2n ** 256n - 1n, 3]);
     const poapAddress = await factory.read.getPOAPContract(["activity-1"]);
     const poapAsAlice = await viem.getContractAt("ActivityPOAP", poapAddress, {
       client: { wallet: alice },

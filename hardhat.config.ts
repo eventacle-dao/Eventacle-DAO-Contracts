@@ -13,7 +13,11 @@ export default defineConfig({
       default: {
         version: '0.8.28',
         settings: {
-          // 默认配置下不启用优化器，适合开发和调试
+          // 开启优化器并优先减小体积（runs 越小字节码越小，便于测试通过 24KB 限制）
+          optimizer: {
+            enabled: true,
+            runs: 200,
+          },
         },
       },
       production: {
@@ -21,7 +25,7 @@ export default defineConfig({
         settings: {
           optimizer: {
             enabled: true,
-            runs: 200, // 优化次数，根据合约复杂度调整
+            runs: 200, // 部署用：偏向执行效率
           },
         },
       },

@@ -33,3 +33,20 @@
     ]
   }
 }
+{
+  "chainId": "1439",
+  "factory": "0x87c78ae1b1ac74c4e4c00d5fc81bc3df3b5cef91",
+  "reviewStaking": "0x60d4b9c13c9a0dd88f06b5cf9dfc0ec86bd31763",
+  "comments": "0x137e4a25f933cddcf81f8a3c256473e1309d8127",
+  "deployedAt": "2026-02-20T06:56:58.851Z",
+  "constructorArgs": {
+    "reviewStaking": [
+      "0xa06ca9dd918491441b32eb4ea2c8b984b31163da",
+      "100000000000000000000"
+    ],
+    "comments": [
+      "0x87c78ae1b1ac74c4e4c00d5fc81bc3df3b5cef91",
+      "0x60d4b9c13c9a0dd88f06b5cf9dfc0ec86bd31763"
+    ]
+  }
+}
