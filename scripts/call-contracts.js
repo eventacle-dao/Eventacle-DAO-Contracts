@@ -11,7 +11,7 @@
  *   ACTIVITY_CMD                命令（见下）
  *
  * 命令与参数：
- *   create       创建活动。ACTIVITY_NAME, ACTIVITY_SYMBOL [, ACTIVITY_METADATA_URI]
+ *   create       创建活动。ACTIVITY_NAME, ACTIVITY_SYMBOL [, ACTIVITY_METADATA_URI] [, ACTIVITY_START_AT] [, ACTIVITY_END_AT] [, ACTIVITY_TYPE]
  *   list         列出所有活动
  *   info         活动详情。ACTIVITY_ID
  *   mint         铸造 POAP（铸造时绑定该 token 的元数据 URI）。ACTIVITY_ID, ACTIVITY_TO [, ACTIVITY_POAP_METADATA_URI]，未设则用默认 IPFS 元数据
@@ -176,16 +176,20 @@ async function main() {
   switch (cmd) {
     case "create": {
       if (!name || !symbol) {
-        console.log("create 需设置 ACTIVITY_NAME, ACTIVITY_SYMBOL, 可选 ACTIVITY_METADATA_URI");
+        console.log("create 需设置 ACTIVITY_NAME, ACTIVITY_SYMBOL, 可选 ACTIVITY_METADATA_URI, ACTIVITY_START_AT, ACTIVITY_END_AT, ACTIVITY_TYPE");
         return;
       }
-      console.log("创建活动:", { name, symbol, metadataURI: metadataURI || "(空)" });
-      const createOpts = await getWriteTxOpts(publicClient, account, factory, "createActivity", [name, symbol, metadataURI || ""]);
+      const startAt = process.env.ACTIVITY_START_AT ? BigInt(process.env.ACTIVITY_START_AT) : 0n;
+      const endAt = process.env.ACTIVITY_END_AT ? BigInt(process.env.ACTIVITY_END_AT) : (2n ** 256n - 1n);
+      const activityType = process.env.ACTIVITY_TYPE !== undefined ? Number(process.env.ACTIVITY_TYPE) : 3; // 3 = OTHER
+      const createArgs = [name, symbol, metadataURI || "", startAt, endAt, activityType];
+      console.log("创建活动:", { name, symbol, metadataURI: metadataURI || "(空)", startAt: startAt.toString(), endAt: endAt === 2n ** 256n - 1n ? "max" : endAt.toString(), activityType });
+      const createOpts = await getWriteTxOpts(publicClient, account, factory, "createActivity", createArgs);
       if (!(await askConfirm("即将创建活动 " + name + " (" + symbol + ")", createOpts))) {
         console.log("已取消");
         return;
       }
-      const createTxHash = await factory.write.createActivity([name, symbol, metadataURI || ""], createOpts);
+      const createTxHash = await factory.write.createActivity(createArgs, createOpts);
       console.log("交易已发送, hash:", createTxHash, "等待确认...");
       await publicClient.waitForTransactionReceipt({ hash: createTxHash });
       await new Promise((r) => setTimeout(r, CONFIRM_WAIT_MS));
